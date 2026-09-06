@@ -58,13 +58,18 @@ tests against a reference sequential executor. See
 [mentat/docs/design/](mentat/docs/design/) (ISA
 spec, ADR-001, ADR-002) for the full record.
 
-**Phase 2 — THE VAULT, slice 1 (tickets 001–003) is done.** A checksummed,
+**Phase 2 — THE VAULT, tickets 001–004 are done.** A checksummed,
 append-only, multi-segment log with crash recovery, exhaustively tested by
 truncating a real segment file at every byte offset and confirming no key
 ever comes back corrupted or partially applied
-(`sietch/crates/storage/tests/crash_recovery.rs`), plus
-PUT/GET/DELETE/SCAN/SNAPSHOT primitives with genuine multi-version reads,
-exposed through the `vaultc` CLI. Still open before Phase 2 closes: an
-on-disk B+Tree index, a buffer manager, compaction, transactions, and group
-commit — see [sietch/tickets/](sietch/tickets/) (004–008)
-and [sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md).
+(`sietch/crates/storage/tests/crash_recovery.rs`); PUT/GET/DELETE/SCAN/SNAPSHOT
+primitives with genuine multi-version reads, exposed through the `vaultc`
+CLI; and now a 4096-byte slotted page format plus a buffer pool (clock
+eviction, pinning, dirty-page tracking) built on the same crash-safe log,
+with its own crash-injection and property-based tests that caught a real
+header byte-offset bug before it shipped
+(`sietch/crates/storage/tests/page_and_buffer_property.rs`). Still open
+before Phase 2 closes: the on-disk B+Tree index that will actually use
+these pages, compaction, transactions, and group commit — see
+[sietch/tickets/](sietch/tickets/) (005–008) and
+[sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md).
