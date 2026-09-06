@@ -1,9 +1,21 @@
-# The Impossible Computer
+# ARRAKIS
 
 > Build a real computing ecosystem by systematically removing the assumptions
 > that make conventional computers easy to build, then prove through
 > workloads, benchmarks, failures and integration that the resulting system
 > is more than a collection of clever tricks.
+
+## Why "Arrakis"
+
+Dune's desert planet — a world so hostile that every basic assumption
+(water, shelter, transport, movement itself) has to be re-engineered from
+scratch just to survive on it. That is this project's entire premise:
+remove an assumption a normal computer relies on, and see what has to be
+rebuilt to compensate. Arrakis isn't a metaphor bolted on afterward; it's a
+planet defined by forced reinvention under constraint, which is exactly
+what this repository is. Every subsystem below is named after something
+from the same world for the same reason — see each subsystem's own README
+for its specific rationale.
 
 This is the **combined ecosystem repo**. Each subsystem is developed
 standalone in its own repository and mirrored here commit-for-commit as a
@@ -13,15 +25,15 @@ subdirectory, so this repo always reflects one integrated whole.
 
 | Repo | Codename | Phase | Status |
 |---|---|---|---|
-| [impossible-machine](https://github.com/n-3-0-l-d-3-v/impossible-machine) | THE MACHINE | Phase 1 | COMPLETE |
-| [impossible-language](https://github.com/n-3-0-l-d-3-v/impossible-language) | THE LANGUAGE | Phase 3 | QUEUED |
-| [impossible-kernel](https://github.com/n-3-0-l-d-3-v/impossible-kernel) | THE KERNEL | Phase 4 | QUEUED |
-| [impossible-vault](https://github.com/n-3-0-l-d-3-v/impossible-vault) | THE VAULT | Phase 2 | ACTIVE |
-| [impossible-database](https://github.com/n-3-0-l-d-3-v/impossible-database) | THE DATABASE | Phase 6 | QUEUED |
-| [impossible-wire](https://github.com/n-3-0-l-d-3-v/impossible-wire) | THE WIRE | Phase 5 | QUEUED |
-| [impossible-colony](https://github.com/n-3-0-l-d-3-v/impossible-colony) | THE COLONY | Phase 7 | QUEUED |
-| [impossible-history](https://github.com/n-3-0-l-d-3-v/impossible-history) | THE HISTORY | Phase 8 | QUEUED |
-| [impossible-artifact](https://github.com/n-3-0-l-d-3-v/impossible-artifact) | THE ARTIFACT | Phase 9 | STRETCH |
+| [mentat](https://github.com/n-3-0-l-d-3-v/mentat) | THE MACHINE | Phase 1 | COMPLETE |
+| [chakobsa](https://github.com/n-3-0-l-d-3-v/chakobsa) | THE LANGUAGE | Phase 3 | QUEUED |
+| [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) | THE KERNEL | Phase 4 | QUEUED |
+| [sietch](https://github.com/n-3-0-l-d-3-v/sietch) | THE VAULT | Phase 2 | ACTIVE |
+| [choam](https://github.com/n-3-0-l-d-3-v/choam) | THE DATABASE | Phase 6 | QUEUED |
+| [distrans](https://github.com/n-3-0-l-d-3-v/distrans) | THE WIRE | Phase 5 | QUEUED |
+| [landsraad](https://github.com/n-3-0-l-d-3-v/landsraad) | THE COLONY | Phase 7 | QUEUED |
+| [ghola](https://github.com/n-3-0-l-d-3-v/ghola) | THE HISTORY | Phase 8 | QUEUED |
+| [shai-hulud](https://github.com/n-3-0-l-d-3-v/shai-hulud) | THE ARTIFACT | Phase 9 | STRETCH |
 
 ## Reading order
 
@@ -42,17 +54,17 @@ two-pass assembler, and an `imc` CLI
 programs (loops, recursive function calls, memory through calls) with
 deterministic, tamper-detecting replay and property-based differential
 tests against a reference sequential executor. See
-[impossible-machine/tickets/](impossible-machine/tickets/) and
-[impossible-machine/docs/design/](impossible-machine/docs/design/) (ISA
+[mentat/tickets/](mentat/tickets/) and
+[mentat/docs/design/](mentat/docs/design/) (ISA
 spec, ADR-001, ADR-002) for the full record.
 
 **Phase 2 — THE VAULT, slice 1 (tickets 001–003) is done.** A checksummed,
 append-only, multi-segment log with crash recovery, exhaustively tested by
 truncating a real segment file at every byte offset and confirming no key
 ever comes back corrupted or partially applied
-(`impossible-vault/crates/storage/tests/crash_recovery.rs`), plus
+(`sietch/crates/storage/tests/crash_recovery.rs`), plus
 PUT/GET/DELETE/SCAN/SNAPSHOT primitives with genuine multi-version reads,
 exposed through the `vaultc` CLI. Still open before Phase 2 closes: an
 on-disk B+Tree index, a buffer manager, compaction, transactions, and group
-commit — see [impossible-vault/tickets/](impossible-vault/tickets/) (004–008)
-and [impossible-vault/docs/design/STORAGE.md](impossible-vault/docs/design/STORAGE.md).
+commit — see [sietch/tickets/](sietch/tickets/) (004–008)
+and [sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md).
