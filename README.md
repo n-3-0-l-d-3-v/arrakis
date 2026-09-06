@@ -13,10 +13,10 @@ subdirectory, so this repo always reflects one integrated whole.
 
 | Repo | Codename | Phase | Status |
 |---|---|---|---|
-| [impossible-machine](https://github.com/n-3-0-l-d-3-v/impossible-machine) | THE MACHINE | Phase 1 | ACTIVE |
+| [impossible-machine](https://github.com/n-3-0-l-d-3-v/impossible-machine) | THE MACHINE | Phase 1 | COMPLETE |
 | [impossible-language](https://github.com/n-3-0-l-d-3-v/impossible-language) | THE LANGUAGE | Phase 3 | QUEUED |
 | [impossible-kernel](https://github.com/n-3-0-l-d-3-v/impossible-kernel) | THE KERNEL | Phase 4 | QUEUED |
-| [impossible-vault](https://github.com/n-3-0-l-d-3-v/impossible-vault) | THE VAULT | Phase 2 | QUEUED |
+| [impossible-vault](https://github.com/n-3-0-l-d-3-v/impossible-vault) | THE VAULT | Phase 2 | ACTIVE |
 | [impossible-database](https://github.com/n-3-0-l-d-3-v/impossible-database) | THE DATABASE | Phase 6 | QUEUED |
 | [impossible-wire](https://github.com/n-3-0-l-d-3-v/impossible-wire) | THE WIRE | Phase 5 | QUEUED |
 | [impossible-colony](https://github.com/n-3-0-l-d-3-v/impossible-colony) | THE COLONY | Phase 7 | QUEUED |
@@ -34,12 +34,17 @@ stall as an unfinished monument — see [docs/FALLBACK.md](docs/FALLBACK.md)).
 
 ## Status
 
-Current focus: **Phase 1 — THE MACHINE**. Core execution model is real and
-tested end-to-end: fixed 8-byte instruction encoding, a dependency-graph
-scheduler that replaces the program counter within a block, bounds-checked
-memory and traps, a two-pass assembler, and an `imc` CLI
-(assemble/disassemble/run/replay/debug), proven against real programs
-(loops, recursive function calls, memory through calls) with deterministic,
-tamper-detecting replay. See [impossible-machine/tickets/](impossible-machine/tickets/)
-for what's done vs. still open (trace viewer/profiler, property-based
-testing) before Phase 1 closes and Phase 2 (THE VAULT) begins.
+**Phase 1 — THE MACHINE is complete** (all 8 tickets closed). Fixed 8-byte
+instruction encoding, a dependency-graph scheduler that replaces the
+program counter within a block, bounds-checked memory and traps, a
+two-pass assembler, and an `imc` CLI
+(assemble/disassemble/run/replay/debug/trace/profile) — proven against real
+programs (loops, recursive function calls, memory through calls) with
+deterministic, tamper-detecting replay and property-based differential
+tests against a reference sequential executor. See
+[impossible-machine/tickets/](impossible-machine/tickets/) and
+[impossible-machine/docs/design/](impossible-machine/docs/design/) (ISA
+spec, ADR-001, ADR-002) for the full record.
+
+Current focus: **Phase 2 — THE VAULT** (immutable, append-only storage —
+see [impossible-vault](https://github.com/n-3-0-l-d-3-v/impossible-vault)).
