@@ -34,5 +34,12 @@ stall as an unfinished monument — see [docs/FALLBACK.md](docs/FALLBACK.md)).
 
 ## Status
 
-Current focus: **Phase 1 — THE MACHINE**
-(the dependency-driven VM). See [impossible-machine/tickets/](impossible-machine/tickets/).
+Current focus: **Phase 1 — THE MACHINE**. Core execution model is real and
+tested end-to-end: fixed 8-byte instruction encoding, a dependency-graph
+scheduler that replaces the program counter within a block, bounds-checked
+memory and traps, a two-pass assembler, and an `imc` CLI
+(assemble/disassemble/run/replay/debug), proven against real programs
+(loops, recursive function calls, memory through calls) with deterministic,
+tamper-detecting replay. See [impossible-machine/tickets/](impossible-machine/tickets/)
+for what's done vs. still open (trace viewer/profiler, property-based
+testing) before Phase 1 closes and Phase 2 (THE VAULT) begins.
