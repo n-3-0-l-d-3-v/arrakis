@@ -46,5 +46,13 @@ tests against a reference sequential executor. See
 [impossible-machine/docs/design/](impossible-machine/docs/design/) (ISA
 spec, ADR-001, ADR-002) for the full record.
 
-Current focus: **Phase 2 — THE VAULT** (immutable, append-only storage —
-see [impossible-vault](https://github.com/n-3-0-l-d-3-v/impossible-vault)).
+**Phase 2 — THE VAULT, slice 1 (tickets 001–003) is done.** A checksummed,
+append-only, multi-segment log with crash recovery, exhaustively tested by
+truncating a real segment file at every byte offset and confirming no key
+ever comes back corrupted or partially applied
+(`impossible-vault/crates/storage/tests/crash_recovery.rs`), plus
+PUT/GET/DELETE/SCAN/SNAPSHOT primitives with genuine multi-version reads,
+exposed through the `vaultc` CLI. Still open before Phase 2 closes: an
+on-disk B+Tree index, a buffer manager, compaction, transactions, and group
+commit — see [impossible-vault/tickets/](impossible-vault/tickets/) (004–008)
+and [impossible-vault/docs/design/STORAGE.md](impossible-vault/docs/design/STORAGE.md).
