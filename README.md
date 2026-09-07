@@ -58,18 +58,21 @@ tests against a reference sequential executor. See
 [mentat/docs/design/](mentat/docs/design/) (ISA
 spec, ADR-001, ADR-002) for the full record.
 
-**Phase 2 — THE VAULT, tickets 001–004 are done.** A checksummed,
+**Phase 2 — THE VAULT, tickets 001–005 are done.** A checksummed,
 append-only, multi-segment log with crash recovery, exhaustively tested by
 truncating a real segment file at every byte offset and confirming no key
 ever comes back corrupted or partially applied
 (`sietch/crates/storage/tests/crash_recovery.rs`); PUT/GET/DELETE/SCAN/SNAPSHOT
 primitives with genuine multi-version reads, exposed through the `vaultc`
-CLI; and now a 4096-byte slotted page format plus a buffer pool (clock
-eviction, pinning, dirty-page tracking) built on the same crash-safe log,
-with its own crash-injection and property-based tests that caught a real
-header byte-offset bug before it shipped
-(`sietch/crates/storage/tests/page_and_buffer_property.rs`). Still open
-before Phase 2 closes: the on-disk B+Tree index that will actually use
-these pages, compaction, transactions, and group commit — see
-[sietch/tickets/](sietch/tickets/) (005–008) and
-[sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md).
+CLI; a 4096-byte slotted page format plus a buffer pool (clock eviction,
+pinning, dirty-page tracking) built on the same crash-safe log; and now a
+real disk-oriented B+Tree index with correct node splitting and
+multi-level growth — verified at 20,000 inserts producing a 3+ level tree
+with every key still retrievable, and differentially tested against
+`std::collections::BTreeMap` under both large randomized and
+property-based test sequences
+(`sietch/crates/storage/tests/btree_property.rs`). Still open before
+Phase 2 closes: B+Tree deletion/rebalancing, bounded range scans via leaf
+sibling links, wiring the B+Tree in as `Store`'s real index, compaction,
+transactions, and group commit — see [sietch/tickets/](sietch/tickets/)
+(006–011) and [sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md).
