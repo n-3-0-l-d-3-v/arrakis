@@ -71,8 +71,18 @@ multi-level growth — verified at 20,000 inserts producing a 3+ level tree
 with every key still retrievable, and differentially tested against
 `std::collections::BTreeMap` under both large randomized and
 property-based test sequences
-(`sietch/crates/storage/tests/btree_property.rs`). Still open before
-Phase 2 closes: B+Tree deletion/rebalancing, bounded range scans via leaf
-sibling links, wiring the B+Tree in as `Store`'s real index, compaction,
-transactions, and group commit — see [sietch/tickets/](sietch/tickets/)
-(006–011) and [sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md).
+(`sietch/crates/storage/tests/btree_property.rs`).
+
+**Ticket 011 is a negative result, not a completion, and that's recorded
+honestly.** Wiring the B+Tree in as `Store`'s index (`IndexedStore`) was
+built and crash/differentially tested correct, but its own required
+benchmark showed reopening ~12x *slower* than plain `Store` — persisting
+pages through a generic `Store` means the index pays its own full-log-
+replay against a log inflated 200x+ by page-rebuild write amplification.
+Root cause and decision in
+[sietch's ADR-004](https://github.com/n-3-0-l-d-3-v/sietch/blob/main/docs/design/decisions/ADR-004-indexed-store-regression-and-write-amplification.md);
+the real fix is ticket 012. Still open before Phase 2 closes: that fix,
+B+Tree deletion/rebalancing, bounded range scans via leaf sibling links,
+compaction, transactions, and group commit — see
+[sietch/tickets/](sietch/tickets/) (006–012) and
+[sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md).
