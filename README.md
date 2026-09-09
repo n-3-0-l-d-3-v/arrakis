@@ -85,8 +85,18 @@ and checkpoint batching then removed the remaining per-operation overhead
 ([ADR-006](https://github.com/n-3-0-l-d-3-v/sietch/blob/main/docs/design/decisions/ADR-006-checkpoint-batching.md)).
 **Reproducibly measured: `IndexedStore::open` is now faster than plain
 `Store::open` at 10,000+ entries (1.12x at 10,000, 1.37x at 30,000), with
-the advantage growing with history size.** Still open before Phase 2
-closes: B+Tree deletion/rebalancing, bounded range scans via leaf sibling
-links, compaction, transactions, and group commit — see
-[sietch/tickets/](sietch/tickets/) (006–010) and
+the advantage growing with history size.**
+
+**Ticket 006 (compaction) is also closed.** `Store::compact()` rewrites
+the log to hold only live data, never mutating an existing segment —
+a commit-marker protocol whose crash-safety is proven by six tests
+covering every distinguishable interruption point, one of which caught a
+real bug (an early design could have destroyed the only valid copy of the
+data during a specific crash-timing edge case) before it shipped. See
+[sietch's ADR-007](https://github.com/n-3-0-l-d-3-v/sietch/blob/main/docs/design/decisions/ADR-007-compaction-commit-marker.md).
+
+Still open before Phase 2 closes: B+Tree deletion/rebalancing, bounded
+range scans via leaf sibling links, transactions/concurrency, group
+commit, and snapshot-aware compaction — see
+[sietch/tickets/](sietch/tickets/) (007–010, 013) and
 [sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md).
