@@ -95,8 +95,15 @@ real bug (an early design could have destroyed the only valid copy of the
 data during a specific crash-timing edge case) before it shipped. See
 [sietch's ADR-007](https://github.com/n-3-0-l-d-3-v/sietch/blob/main/docs/design/decisions/ADR-007-compaction-commit-marker.md).
 
-Still open before Phase 2 closes: B+Tree deletion/rebalancing, bounded
-range scans via leaf sibling links, transactions/concurrency, group
-commit, and snapshot-aware compaction — see
-[sietch/tickets/](sietch/tickets/) (007–010, 013) and
-[sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md).
+**Ticket 009 (B+Tree deletion) is also closed.** `BTree::delete` keeps the
+tree well-formed by propagating "this node became completely empty" up
+through the tree — proven at scale (2,000 inserts collapsed back to 10
+keys) and against a reference `BTreeMap` for arbitrary interleaved
+insert/delete sequences. It deliberately skips full minimum-occupancy
+rebalancing (a fill-factor cost, not a correctness one) — see
+[sietch's ADR-008](https://github.com/n-3-0-l-d-3-v/sietch/blob/main/docs/design/decisions/ADR-008-btree-deletion-without-rebalancing.md).
+
+Still open before Phase 2 closes: leaf sibling links for bounded range
+scans, transactions/concurrency, group commit, and snapshot-aware
+compaction — see [sietch/tickets/](sietch/tickets/) (007, 008, 010, 013)
+and [sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md).
