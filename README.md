@@ -103,7 +103,17 @@ insert/delete sequences. It deliberately skips full minimum-occupancy
 rebalancing (a fill-factor cost, not a correctness one) — see
 [sietch's ADR-008](https://github.com/n-3-0-l-d-3-v/sietch/blob/main/docs/design/decisions/ADR-008-btree-deletion-without-rebalancing.md).
 
-Still open before Phase 2 closes: leaf sibling links for bounded range
-scans, transactions/concurrency, group commit, and snapshot-aware
-compaction — see [sietch/tickets/](sietch/tickets/) (007, 008, 010, 013)
-and [sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md).
+**Ticket 010 (bounded range scans) is also closed.** Leaf pages now carry
+a right-sibling pointer, and `scan_range` walks it instead of
+re-descending from the root. Measured directly: `scan_range` costs a flat
+~20–24µs regardless of tree size (1,000 to 50,000 entries) while the old
+full-traversal `scan_all` grows from ~85µs to ~5.4ms over the same trees —
+real O(log n + k) vs. O(n) numbers. The B+Tree-vs-LSM-tree comparison
+ticket 005 deferred is written too, grounded in this project's own
+measurements — see
+[sietch's ADR-009](https://github.com/n-3-0-l-d-3-v/sietch/blob/main/docs/design/decisions/ADR-009-btree-vs-lsm-tree.md).
+
+Still open before Phase 2 closes: transactions/concurrency, group commit,
+and snapshot-aware compaction — see [sietch/tickets/](sietch/tickets/)
+(007, 008, 013) and
+[sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md).
