@@ -26,7 +26,7 @@ subdirectory, so this repo always reflects one integrated whole.
 | Repo | Codename | Phase | Status |
 |---|---|---|---|
 | [mentat](https://github.com/n-3-0-l-d-3-v/mentat) | THE MACHINE | Phase 1 | COMPLETE |
-| [chakobsa](https://github.com/n-3-0-l-d-3-v/chakobsa) | THE LANGUAGE | Phase 3 | QUEUED |
+| [chakobsa](https://github.com/n-3-0-l-d-3-v/chakobsa) | THE LANGUAGE | Phase 3 | ACTIVE |
 | [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) | THE KERNEL | Phase 4 | QUEUED |
 | [sietch](https://github.com/n-3-0-l-d-3-v/sietch) | THE VAULT | Phase 2 | COMPLETE |
 | [choam](https://github.com/n-3-0-l-d-3-v/choam) | THE DATABASE | Phase 6 | QUEUED |
@@ -153,3 +153,17 @@ invalidate an in-flight transaction's reads either. See
 ticket list.** See
 [sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md) for the
 full architecture.
+
+**Phase 3 — THE LANGUAGE is now active.** `chakobsa` compiles a small
+statically-typed language to
+[mentat](https://github.com/n-3-0-l-d-3-v/mentat)'s bytecode without ever
+building a conventional AST — the parser (ticket 003, not yet started)
+constructs typed SSA form directly while parsing, using an
+incremental, dominance-frontier-free construction algorithm whose
+driving loop is naturally a recursive-descent parser's control flow.
+Ticket 001 (lexer) is done: a full token stream for the v1 surface
+language, proven never to panic on arbitrary input via property testing.
+See
+[chakobsa's docs/design/LANGUAGE.md](https://github.com/n-3-0-l-d-3-v/chakobsa/blob/main/docs/design/LANGUAGE.md)
+for the full pipeline and
+[chakobsa's ADR-001](https://github.com/n-3-0-l-d-3-v/chakobsa/blob/main/docs/design/decisions/ADR-001-lexer-design.md).
