@@ -167,3 +167,16 @@ See
 [chakobsa's docs/design/LANGUAGE.md](https://github.com/n-3-0-l-d-3-v/chakobsa/blob/main/docs/design/LANGUAGE.md)
 for the full pipeline and
 [chakobsa's ADR-001](https://github.com/n-3-0-l-d-3-v/chakobsa/blob/main/docs/design/decisions/ADR-001-lexer-design.md).
+
+**Ticket 002 (typed SSA IR) is also done.** Typed values, instructions,
+basic blocks and functions, plus structural/type validation mirroring
+mentat's own `Program::validate` — a block's predecessors are computed
+on demand rather than cached, since the parser (ticket 003) builds
+blocks incrementally and a block's true predecessor set isn't known
+until every possible jump into it exists. Also ships a from-scratch
+reference interpreter, independent of codegen, that ticket 006's
+differential tests will compare compiled-and-mentat-VM-executed results
+against. One of its 22 unit tests caught a real bug during development
+(function parameters weren't seeded into the value-definition set)
+before it could reach the parser. See
+[chakobsa's ADR-002](https://github.com/n-3-0-l-d-3-v/chakobsa/blob/main/docs/design/decisions/ADR-002-typed-ssa-ir-design.md).
