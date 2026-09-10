@@ -28,7 +28,7 @@ subdirectory, so this repo always reflects one integrated whole.
 | [mentat](https://github.com/n-3-0-l-d-3-v/mentat) | THE MACHINE | Phase 1 | COMPLETE |
 | [chakobsa](https://github.com/n-3-0-l-d-3-v/chakobsa) | THE LANGUAGE | Phase 3 | QUEUED |
 | [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) | THE KERNEL | Phase 4 | QUEUED |
-| [sietch](https://github.com/n-3-0-l-d-3-v/sietch) | THE VAULT | Phase 2 | ACTIVE |
+| [sietch](https://github.com/n-3-0-l-d-3-v/sietch) | THE VAULT | Phase 2 | COMPLETE |
 | [choam](https://github.com/n-3-0-l-d-3-v/choam) | THE DATABASE | Phase 6 | QUEUED |
 | [distrans](https://github.com/n-3-0-l-d-3-v/distrans) | THE WIRE | Phase 5 | QUEUED |
 | [landsraad](https://github.com/n-3-0-l-d-3-v/landsraad) | THE COLONY | Phase 7 | QUEUED |
@@ -135,7 +135,21 @@ racing writer threads. Full serializability (write skew is possible) and
 multi-process coordination are explicitly out of scope. See
 [sietch's ADR-011](https://github.com/n-3-0-l-d-3-v/sietch/blob/main/docs/design/decisions/ADR-011-transactions-snapshot-isolation.md).
 
-Still open before Phase 2 closes: snapshot-aware compaction — see
-[sietch/tickets/013-snapshot-aware-compaction.md](sietch/tickets/013-snapshot-aware-compaction.md)
-and
-[sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md).
+**Ticket 013 (snapshot-aware compaction) is also closed — Phase 2's
+ticket backlog is now fully done.** `Store::hold_snapshot()` returns a
+guard; while any guard is held, `compact()` retains every version the
+oldest held snapshot could still need, instead of discarding all
+non-latest versions unconditionally, with no change in reclaim ratio
+when nothing is held. The same rewrite fixed a sharper pre-existing
+defect: compaction previously reassigned every surviving record a fresh
+sequence number, silently scrambling snapshot ordering on every
+compaction; surviving records now always keep their original seq.
+`TransactionalStore`/`Transaction` hold a guard for an open
+transaction's whole lifetime, so a concurrent compaction can never
+invalidate an in-flight transaction's reads either. See
+[sietch's ADR-012](https://github.com/n-3-0-l-d-3-v/sietch/blob/main/docs/design/decisions/ADR-012-snapshot-aware-compaction.md).
+
+**Phase 2 (THE VAULT) is now feature-complete against its original
+ticket list.** See
+[sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md) for the
+full architecture.
