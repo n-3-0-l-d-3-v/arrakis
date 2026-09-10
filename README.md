@@ -113,7 +113,17 @@ ticket 005 deferred is written too, grounded in this project's own
 measurements — see
 [sietch's ADR-009](https://github.com/n-3-0-l-d-3-v/sietch/blob/main/docs/design/decisions/ADR-009-btree-vs-lsm-tree.md).
 
-Still open before Phase 2 closes: transactions/concurrency, group commit,
-and snapshot-aware compaction — see [sietch/tickets/](sietch/tickets/)
-(007, 008, 013) and
+**Ticket 008 (group commit) is also closed.** `Store::apply_batch` shares
+a single `fsync` across a whole caller-supplied batch of writes instead
+of one per write — an explicit, caller-controlled batch API rather than
+a background timer, so a batch's durability point is always exactly what
+the caller intended, and crash safety needs no new reasoning (a
+partially-written batch is just another torn write under the existing
+recovery contract). Measured in the same benchmark run: ~7.5x faster at
+10 writes, ~57x at 100, ~260x at 1,000, growing with batch size — see
+[sietch's ADR-010](https://github.com/n-3-0-l-d-3-v/sietch/blob/main/docs/design/decisions/ADR-010-group-commit.md).
+
+Still open before Phase 2 closes: transactions/concurrency and
+snapshot-aware compaction — see [sietch/tickets/](sietch/tickets/) (007,
+013) and
 [sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md).
