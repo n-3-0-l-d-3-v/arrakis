@@ -123,7 +123,19 @@ recovery contract). Measured in the same benchmark run: ~7.5x faster at
 10 writes, ~57x at 100, ~260x at 1,000, growing with batch size — see
 [sietch's ADR-010](https://github.com/n-3-0-l-d-3-v/sietch/blob/main/docs/design/decisions/ADR-010-group-commit.md).
 
-Still open before Phase 2 closes: transactions/concurrency and
-snapshot-aware compaction — see [sietch/tickets/](sietch/tickets/) (007,
-013) and
+**Ticket 007 (transactions and concurrency) is also closed.**
+`TransactionalStore`/`Transaction` give Snapshot Isolation with
+write-write conflict detection, built directly on the existing snapshot
+and batched-write primitives rather than a separate transaction log.
+Proven with real OS threads: a lost-update test runs 8 threads × 25
+retry-on-conflict increments against one shared counter and recovers
+exactly 200 — no increment silently dropped to a race — and a
+snapshot-isolation test confirms a reader untouched by 4 concurrently
+racing writer threads. Full serializability (write skew is possible) and
+multi-process coordination are explicitly out of scope. See
+[sietch's ADR-011](https://github.com/n-3-0-l-d-3-v/sietch/blob/main/docs/design/decisions/ADR-011-transactions-snapshot-isolation.md).
+
+Still open before Phase 2 closes: snapshot-aware compaction — see
+[sietch/tickets/013-snapshot-aware-compaction.md](sietch/tickets/013-snapshot-aware-compaction.md)
+and
 [sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md).
