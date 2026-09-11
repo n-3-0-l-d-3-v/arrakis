@@ -180,3 +180,23 @@ against. One of its 22 unit tests caught a real bug during development
 (function parameters weren't seeded into the value-definition set)
 before it could reach the parser. See
 [chakobsa's ADR-002](https://github.com/n-3-0-l-d-3-v/chakobsa/blob/main/docs/design/decisions/ADR-002-typed-ssa-ir-design.md).
+
+**Ticket 003 (the parser) is also done — the ticket that actually
+proves this repo's whole premise.** The parser drives an implementation
+of Braun, Buchwald, Hack, Leißa, Mallon & Zwinkau's (CC 2013) incremental
+SSA construction algorithm directly from recursive-descent parsing —
+resolving a variable read against whatever definition reaches that
+point, inserting and sealing phi nodes as a block's predecessors become
+known — with no `Expr`/`Stmt` AST node ever built in between. Its
+driving loop turns out to genuinely *be* the parser's own control flow,
+not something layered on top. Handles real programs end-to-end:
+straight-line arithmetic, `if`/`else`, nested `while` loops, recursion,
+mutual recursion (via a two-pass signature scan resolving forward
+references before any body is parsed), and short-circuit `and`/`or`
+compiled as real branches, proven to actually skip evaluating their
+right-hand side rather than just computing the right boolean. Caught a
+real bug along the way: an `if`/`else` where both arms `return` could
+produce an empty, unreachable join block that failed IR validation —
+fixed and documented rather than papered over. 32 tests total (13
+end-to-end programs, 17 typed-error cases, 2 property tests). See
+[chakobsa's ADR-003](https://github.com/n-3-0-l-d-3-v/chakobsa/blob/main/docs/design/decisions/ADR-003-parser-direct-to-ssa.md).
