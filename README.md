@@ -200,3 +200,25 @@ produce an empty, unreachable join block that failed IR validation —
 fixed and documented rather than papered over. 32 tests total (13
 end-to-end programs, 17 typed-error cases, 2 property tests). See
 [chakobsa's ADR-003](https://github.com/n-3-0-l-d-3-v/chakobsa/blob/main/docs/design/decisions/ADR-003-parser-direct-to-ssa.md).
+
+**Ticket 004 (codegen to mentat) is also done — the first real
+cross-repo integration in the ecosystem.** `chakobsa` now depends on
+`mentat`'s `isa`/`vm` crates via a `git` dependency, resolved by Cargo
+like any other, and lowers typed SSA to `mentat::Program`: greedy
+register allocation bounded by mentat's 32 registers, and a genuine
+software call stack so a recursive call can't clobber the caller's own
+still-needed values — mentat's own call stack tracks only return
+addresses, never registers. Bridges three real architectural mismatches
+between a typed-SSA CFG and mentat's block-indexed, dependency-scheduled
+machine (mentat's `Jz`/`Jnz` name only one branch target; `Call` is a
+terminator but `ir::Call` isn't; multi-value moves must be parallel, not
+sequential, or an argument swap can clobber itself). Caught four real
+bugs against the **actual mentat VM**, not just the reference
+interpreter — mentat's bitwise `Not` mistaken for logical negation, the
+caller-saved-register hazard recursion exposed, and two independent
+liveness-analysis bugs — each fixed and covered by a regression test. 13
+end-to-end tests run compiled output on the real VM, 9 unit tests cover
+liveness/regalloc, and a 200-case differential property test confirms
+compiled-and-VM-executed results always match the reference interpreter.
+See
+[chakobsa's ADR-004](https://github.com/n-3-0-l-d-3-v/chakobsa/blob/main/docs/design/decisions/ADR-004-codegen-and-calling-convention.md).
