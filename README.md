@@ -265,3 +265,13 @@ arbitrary rights combinations. See
 [muaddib's docs/design/KERNEL.md](https://github.com/n-3-0-l-d-3-v/muaddib/blob/main/docs/design/KERNEL.md)
 for the full five-crate architecture and
 [muaddib's ADR-001](https://github.com/n-3-0-l-d-3-v/muaddib/blob/main/docs/design/decisions/ADR-001-capability-model.md).
+
+**Ticket 002 (processes and scheduler) is also done.** `muaddib`'s
+`Process` indexes capabilities by small local handles — a real OS's
+file-descriptor-table pattern; `Scheduler::spawn_child` hands a child
+*only* the capabilities its caller explicitly names (transferred or
+attenuated), validated all-or-nothing before any are applied — never
+"child inherits everything the parent can see." The scheduler's only
+notion of order is FIFO ready-queue position; nothing resembling a
+clock exists anywhere in it. See
+[muaddib's ADR-002](https://github.com/n-3-0-l-d-3-v/muaddib/blob/main/docs/design/decisions/ADR-002-processes-and-scheduling.md).
