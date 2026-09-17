@@ -27,7 +27,7 @@ subdirectory, so this repo always reflects one integrated whole.
 |---|---|---|---|
 | [mentat](https://github.com/n-3-0-l-d-3-v/mentat) | THE MACHINE | Phase 1 | COMPLETE |
 | [chakobsa](https://github.com/n-3-0-l-d-3-v/chakobsa) | THE LANGUAGE | Phase 3 | COMPLETE |
-| [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) | THE KERNEL | Phase 4 | ACTIVE |
+| [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) | THE KERNEL | Phase 4 | ACTIVE (CORE complete) |
 | [sietch](https://github.com/n-3-0-l-d-3-v/sietch) | THE VAULT | Phase 2 | COMPLETE |
 | [choam](https://github.com/n-3-0-l-d-3-v/choam) | THE DATABASE | Phase 6 | QUEUED |
 | [distrans](https://github.com/n-3-0-l-d-3-v/distrans) | THE WIRE | Phase 5 | QUEUED |
@@ -287,3 +287,22 @@ channel's own queue. Property tests prove a received capability can
 never exceed what the sender held, for arbitrary rights and arbitrary-
 length relay chains across multiple channels. See
 [muaddib's ADR-003](https://github.com/n-3-0-l-d-3-v/muaddib/blob/main/docs/design/decisions/ADR-003-ipc.md).
+
+**Ticket 004 (memory ownership) is also done — muaddib's CORE scope is
+complete.** Memory regions are named only by capability, and ownership
+transfer is enforced by the kernel. ADR-003 had predicted this would
+need no new transfer mechanism. Checking that against the code showed
+it was wrong: `Grant::Transfer` only empties a table slot, and since
+capabilities are `Copy`, a process that kept a copy still had full
+access. The fix is `Grant::Move`, backed by `Kernel::reissue`: revoke
+every outstanding capability for the object and mint exactly one fresh
+one, delivered straight into the message so the sender never sees it.
+It works over IPC and at spawn, for any object kind. Building it exposed
+two older bugs, both fixed. `revoke` required no rights and not even a
+live capability, so a stale old owner could have revoked the new owner.
+And a handle transferred twice in one batch was delivered twice. The
+property test is model-based: every capability any process ever held is
+kept and replayed at random across arbitrary moves, in-flight views,
+reads and writes. It was mutation-checked and fails when either fix is
+removed. See
+[muaddib's ADR-004](https://github.com/n-3-0-l-d-3-v/muaddib/blob/main/docs/design/decisions/ADR-004-memory-ownership.md).
