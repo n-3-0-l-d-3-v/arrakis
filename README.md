@@ -27,7 +27,7 @@ subdirectory, so this repo always reflects one integrated whole.
 |---|---|---|---|
 | [mentat](https://github.com/n-3-0-l-d-3-v/mentat) | THE MACHINE | Phase 1 | COMPLETE |
 | [chakobsa](https://github.com/n-3-0-l-d-3-v/chakobsa) | THE LANGUAGE | Phase 3 | COMPLETE |
-| [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) | THE KERNEL | Phase 4 | ACTIVE (CORE complete) |
+| [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) | THE KERNEL | Phase 4 | COMPLETE |
 | [sietch](https://github.com/n-3-0-l-d-3-v/sietch) | THE VAULT | Phase 2 | COMPLETE |
 | [choam](https://github.com/n-3-0-l-d-3-v/choam) | THE DATABASE | Phase 6 | QUEUED |
 | [distrans](https://github.com/n-3-0-l-d-3-v/distrans) | THE WIRE | Phase 5 | QUEUED |
@@ -320,3 +320,20 @@ the tests were mutation-checked instead (four separate breakages each
 fail them). The "no wall clock" constraint is now a failing test rather
 than a convention. See
 [muaddib's ADR-005](https://github.com/n-3-0-l-d-3-v/muaddib/blob/main/docs/design/decisions/ADR-005-logical-clocks.md).
+
+**Ticket 006 (integration and benchmarks) is done — Phase 4 (THE KERNEL)
+is complete.** `muaddib`'s closing workload is a least-privilege pipeline
+over the whole kernel. Stages are spawned with attenuated channel views,
+a pool of memory regions circulates with every hop a `Grant::Move`, and
+every event is stamped with no physical time anywhere. An
+ambient-authority twin of the same pipeline must agree with it exactly
+(a differential test). The measured cost of the discipline is 17.4× end
+to end at 64-byte messages and 1.35× at page-sized ones. Logical clocks
+alone are 4.3×, and vector-clock cost grows linearly with the number of
+processes heard from. A capability check is ~9 ns whether live or
+revoked. A seeded chaos harness checks every operation against an
+independent model after every step, including revocation mid-transfer
+and replay of every stale capability. It ran 500 seeds × 1000 steps
+clean, catches all six deliberately re-introduced kernel bugs, and
+replays any failure from its seed. See
+[muaddib's ADR-006](https://github.com/n-3-0-l-d-3-v/muaddib/blob/main/docs/design/decisions/ADR-006-integration-and-benchmarks.md).
