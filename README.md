@@ -306,3 +306,17 @@ kept and replayed at random across arbitrary moves, in-flight views,
 reads and writes. It was mutation-checked and fails when either fix is
 removed. See
 [muaddib's ADR-004](https://github.com/n-3-0-l-d-3-v/muaddib/blob/main/docs/design/decisions/ADR-004-memory-ownership.md).
+
+**Ticket 005 (logical clocks) is also done.** Lamport and vector clocks
+are muaddib's only notion of "when." Every process owns a pair; IPC
+sends and receives are stamped events, and spawning a child counts as a
+causal send that the child's first event receives. Stamps have no public
+constructor, so causal knowledge can't be forged. The property tests
+don't check the clocks against themselves: the harness builds the real
+event graph, computes happened-before by reachability, and requires the
+vector-clock order to match it exactly. This runs both for bare clocks
+and through real spawns and channels. No correctness bug turned up, so
+the tests were mutation-checked instead (four separate breakages each
+fail them). The "no wall clock" constraint is now a failing test rather
+than a convention. See
+[muaddib's ADR-005](https://github.com/n-3-0-l-d-3-v/muaddib/blob/main/docs/design/decisions/ADR-005-logical-clocks.md).
