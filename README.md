@@ -275,3 +275,15 @@ attenuated), validated all-or-nothing before any are applied — never
 notion of order is FIFO ready-queue position; nothing resembling a
 clock exists anywhere in it. See
 [muaddib's ADR-002](https://github.com/n-3-0-l-d-3-v/muaddib/blob/main/docs/design/decisions/ADR-002-processes-and-scheduling.md).
+
+**Ticket 003 (IPC) is also done.** `muaddib`'s channels are ordinary
+`capability` objects (`WRITE` = may send, `READ` = may receive); sending
+a capability reuses ticket 002's grant-resolution machinery directly —
+a discovery made while building this ticket, not planned in advance:
+spawning a child with attenuated authority and sending a capability
+over a channel are the same operation shape. A sent-but-unreceived
+capability provably exists in no process's table at all, only in the
+channel's own queue. Property tests prove a received capability can
+never exceed what the sender held, for arbitrary rights and arbitrary-
+length relay chains across multiple channels. See
+[muaddib's ADR-003](https://github.com/n-3-0-l-d-3-v/muaddib/blob/main/docs/design/decisions/ADR-003-ipc.md).
