@@ -27,7 +27,7 @@ subdirectory, so this repo always reflects one integrated whole.
 |---|---|---|---|
 | [mentat](https://github.com/n-3-0-l-d-3-v/mentat) | THE MACHINE | Phase 1 | COMPLETE |
 | [chakobsa](https://github.com/n-3-0-l-d-3-v/chakobsa) | THE LANGUAGE | Phase 3 | COMPLETE |
-| [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) | THE KERNEL | Phase 4 | QUEUED |
+| [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) | THE KERNEL | Phase 4 | ACTIVE |
 | [sietch](https://github.com/n-3-0-l-d-3-v/sietch) | THE VAULT | Phase 2 | COMPLETE |
 | [choam](https://github.com/n-3-0-l-d-3-v/choam) | THE DATABASE | Phase 6 | QUEUED |
 | [distrans](https://github.com/n-3-0-l-d-3-v/distrans) | THE WIRE | Phase 5 | QUEUED |
@@ -250,3 +250,18 @@ compiled output on mentat's VM is currently *slower* than this
 project's own reference interpreter by roughly one to two orders of
 magnitude, across both a recursion-heavy and a loop-heavy program. See
 [chakobsa's ADR-006](https://github.com/n-3-0-l-d-3-v/chakobsa/blob/main/docs/design/decisions/ADR-006-differential-testing-and-benchmarks.md).
+
+**Phase 4 — THE KERNEL is now active.** `muaddib` is a capability-based
+operating environment simulation: no hierarchical path resolution
+anywhere, no trusted wall clock, all resource access mediated by
+explicit capabilities. Ticket 001 (capability model) is done:
+capabilities are unforgeable by Rust privacy alone (no public
+constructor — the compiler, not a runtime check, prevents arbitrary
+construction), revocation is a per-object epoch bump that invalidates
+every outstanding capability with no holder-tracking needed, and
+derivation is strictly attenuation-only — proven, not just asserted,
+that a derived capability can never hold a right its parent lacked, for
+arbitrary rights combinations. See
+[muaddib's docs/design/KERNEL.md](https://github.com/n-3-0-l-d-3-v/muaddib/blob/main/docs/design/KERNEL.md)
+for the full five-crate architecture and
+[muaddib's ADR-001](https://github.com/n-3-0-l-d-3-v/muaddib/blob/main/docs/design/decisions/ADR-001-capability-model.md).
