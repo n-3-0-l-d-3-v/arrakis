@@ -26,7 +26,7 @@ subdirectory, so this repo always reflects one integrated whole.
 | Repo | Codename | Phase | Status |
 |---|---|---|---|
 | [mentat](https://github.com/n-3-0-l-d-3-v/mentat) | THE MACHINE | Phase 1 | COMPLETE |
-| [chakobsa](https://github.com/n-3-0-l-d-3-v/chakobsa) | THE LANGUAGE | Phase 3 | ACTIVE |
+| [chakobsa](https://github.com/n-3-0-l-d-3-v/chakobsa) | THE LANGUAGE | Phase 3 | COMPLETE |
 | [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) | THE KERNEL | Phase 4 | QUEUED |
 | [sietch](https://github.com/n-3-0-l-d-3-v/sietch) | THE VAULT | Phase 2 | COMPLETE |
 | [choam](https://github.com/n-3-0-l-d-3-v/choam) | THE DATABASE | Phase 6 | QUEUED |
@@ -232,3 +232,21 @@ CHAKOBSA-specific wrapper, so it's directly consumable by mentat's own
 `imc disasm`, not just claimed. 7 integration tests run against the
 actual built binary. See
 [chakobsa's ADR-005](https://github.com/n-3-0-l-d-3-v/chakobsa/blob/main/docs/design/decisions/ADR-005-cli-toolchain.md).
+
+**Ticket 006 (differential testing and benchmarks) is also done — Phase
+3 (THE LANGUAGE) is now complete, all 6 tickets closed.** Widening the
+property-test generator to bounded, guaranteed-terminating `while`
+loops immediately found a real bug — not in codegen, in the reference
+interpreter itself: a `Phi` can legitimately reference another `Phi` in
+the same block (a value a nested loop passes through unchanged), and
+the interpreter resolved every instruction strictly in textual order,
+letting a later `Phi` observe an earlier one's just-updated value
+instead of its correct pre-transition value. Fixed, with a dedicated
+regression test. Benchmarks measured two genuinely surprising, honestly
+reported facts rather than assumed ones: codegen's compile time is
+measurably quadratic in single-block program size (root-caused to
+register allocation's interference-graph construction), and running
+compiled output on mentat's VM is currently *slower* than this
+project's own reference interpreter by roughly one to two orders of
+magnitude, across both a recursion-heavy and a loop-heavy program. See
+[chakobsa's ADR-006](https://github.com/n-3-0-l-d-3-v/chakobsa/blob/main/docs/design/decisions/ADR-006-differential-testing-and-benchmarks.md).
