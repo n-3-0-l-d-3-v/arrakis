@@ -222,3 +222,13 @@ liveness/regalloc, and a 200-case differential property test confirms
 compiled-and-VM-executed results always match the reference interpreter.
 See
 [chakobsa's ADR-004](https://github.com/n-3-0-l-d-3-v/chakobsa/blob/main/docs/design/decisions/ADR-004-codegen-and-calling-convention.md).
+
+**Ticket 005 (`chakobsac` CLI) is also done.** `build`/`run`/`dump-ir`,
+a real command-line compiler driver mirroring mentat's own `imc`. A
+required, zero-argument `fn main() -> i64` is the program's entry
+point; `build`'s output is a plain, undecorated `isa::Program` with no
+CHAKOBSA-specific wrapper, so it's directly consumable by mentat's own
+`imc disasm`/`imc run` with zero glue code — verified directly against
+`imc disasm`, not just claimed. 7 integration tests run against the
+actual built binary. See
+[chakobsa's ADR-005](https://github.com/n-3-0-l-d-3-v/chakobsa/blob/main/docs/design/decisions/ADR-005-cli-toolchain.md).
