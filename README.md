@@ -382,3 +382,20 @@ a sufficiently hostile (but still sub-total) fault profile; fixed to
 assert what's actually always true — delivered data is a clean prefix of
 what was sent — instead of narrowing the test to hide it. See
 [distrans's ADR-003](https://github.com/n-3-0-l-d-3-v/distrans/blob/main/docs/design/decisions/ADR-003-reliable-transport.md).
+
+**Ticket 004 (flow and congestion control) is also done.** Every
+`distrans` segment, including the handshake, now carries the sender's
+free receive capacity in bytes; admission is capped by `min(peer window,
+congestion window)`, with RFC 5681 AIMD congestion control (slow start,
+multiplicative decrease on an RTO, fast retransmit on 3 duplicate ACKs).
+Its own property test was wrong twice before it was right: an
+"in-flight never exceeds the window" check failed on a clean channel
+because an RTO's window reset doesn't retroactively shrink data already
+sent — exactly like real TCP — and a fixed grace period (the first
+attempted fix) was also wrong, since recovery time depends on
+RTO/backoff magnitude, not a constant tick count. Fixed by testing the
+actual claim directly and deterministically. A goodput-vs-loss
+measurement found something worth reporting: quadrupling the receive
+window bought nothing once the congestion window, not the receive
+window, was the real bottleneck. See
+[distrans's ADR-004](https://github.com/n-3-0-l-d-3-v/distrans/blob/main/docs/design/decisions/ADR-004-flow-and-congestion-control.md).
