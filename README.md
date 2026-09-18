@@ -446,3 +446,21 @@ them, and ticket 002 is proving relational-level isolation holds once
 real rows are involved, not just inheriting the byte-key guarantee by
 assumption. See
 [choam's docs/design/DATABASE.md](https://github.com/n-3-0-l-d-3-v/choam/blob/main/docs/design/DATABASE.md).
+
+**Ticket 001 (row encoding and catalog) is done.** `choam`'s
+`crates/row`: two disjoint key namespaces (catalog vs. row data)
+distinguished by their first byte; row keys use a fixed-width,
+catalog-assigned `table_id` rather than the table's own name, so one
+table's name can never be a byte-prefix of another's row keys.
+Primary keys are encoded order-preserving; row values use an ordinary
+length-prefixed codec — two distinct encodings of the same value type,
+on purpose. `crates/catalog`: table schemas are stored as ordinary rows
+in the same `sietch::Store`, under the reserved namespace — `CREATE
+TABLE` gets exactly sietch's own crash-safety and versioning for free,
+with no separate metadata file. A property-design mistake was caught
+before it shipped: an early key-collision property compared primary
+keys of independently arbitrary types, which could fail on a
+coincidental encoding collision no real table (which has exactly one
+primary-key type) could ever produce — fixed to draw both keys from one
+chosen type. See
+[choam's ADR-001](https://github.com/n-3-0-l-d-3-v/choam/blob/main/docs/design/decisions/ADR-001-row-encoding-and-catalog.md).
