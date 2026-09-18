@@ -30,7 +30,7 @@ subdirectory, so this repo always reflects one integrated whole.
 | [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) | THE KERNEL | Phase 4 | COMPLETE |
 | [sietch](https://github.com/n-3-0-l-d-3-v/sietch) | THE VAULT | Phase 2 | COMPLETE |
 | [choam](https://github.com/n-3-0-l-d-3-v/choam) | THE DATABASE | Phase 6 | QUEUED |
-| [distrans](https://github.com/n-3-0-l-d-3-v/distrans) | THE WIRE | Phase 5 | QUEUED |
+| [distrans](https://github.com/n-3-0-l-d-3-v/distrans) | THE WIRE | Phase 5 | ACTIVE |
 | [landsraad](https://github.com/n-3-0-l-d-3-v/landsraad) | THE COLONY | Phase 7 | QUEUED |
 | [ghola](https://github.com/n-3-0-l-d-3-v/ghola) | THE HISTORY | Phase 8 | QUEUED |
 | [shai-hulud](https://github.com/n-3-0-l-d-3-v/shai-hulud) | THE ARTIFACT | Phase 9 | STRETCH |
@@ -337,3 +337,19 @@ and replay of every stale capability. It ran 500 seeds × 1000 steps
 clean, catches all six deliberately re-introduced kernel bugs, and
 replays any failure from its seed. See
 [muaddib's ADR-006](https://github.com/n-3-0-l-d-3-v/muaddib/blob/main/docs/design/decisions/ADR-006-integration-and-benchmarks.md).
+
+**Phase 5 — THE WIRE is now active.** `distrans` builds reliable
+transport and RPC over a channel that guarantees nothing: no ordering,
+no reliable delivery, no framing, no integrity. **Ticket 001 (hostile
+channel) is done**: an event-driven, virtual-tick-time datagram channel
+with seeded fault injection (loss, duplication, reordering, corruption,
+truncation) and scripted per-datagram overrides for pinning one exact
+corner case. Faults are decided at send time from a hand-rolled
+`SplitMix64` (no external RNG dependency, so a recorded seed survives a
+dependency bump), so a whole run replays byte-for-byte from
+`(seed, profile)` — proven for 256 arbitrary profiles, plus a statistical
+check that each fault's observed rate matches its configured probability.
+See
+[distrans's docs/design/WIRE.md](https://github.com/n-3-0-l-d-3-v/distrans/blob/main/docs/design/WIRE.md)
+for the full layer map and
+[distrans's ADR-001](https://github.com/n-3-0-l-d-3-v/distrans/blob/main/docs/design/decisions/ADR-001-hostile-channel.md).
