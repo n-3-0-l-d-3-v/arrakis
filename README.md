@@ -353,3 +353,13 @@ See
 [distrans's docs/design/WIRE.md](https://github.com/n-3-0-l-d-3-v/distrans/blob/main/docs/design/WIRE.md)
 for the full layer map and
 [distrans's ADR-001](https://github.com/n-3-0-l-d-3-v/distrans/blob/main/docs/design/decisions/ADR-001-hostile-channel.md).
+
+**Ticket 002 (framing and integrity) is also done.** `distrans`'s
+`crates/frame`: a fixed 12-byte header plus a CRC-32C trailer, checks
+ordered cheapest-first, every rejection its own error variant.
+Property-tested for round-trip correctness, single- and odd-multi-bit
+flip detection, and panic-freedom on arbitrary garbage/truncation (1024
+cases each), then fed through a real hostile channel at 40%
+corruption / 30% truncation across 40 seeds to prove the two crates
+actually compose. See
+[distrans's ADR-002](https://github.com/n-3-0-l-d-3-v/distrans/blob/main/docs/design/decisions/ADR-002-framing-and-integrity.md).
