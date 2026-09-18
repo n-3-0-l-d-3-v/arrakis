@@ -29,7 +29,7 @@ subdirectory, so this repo always reflects one integrated whole.
 | [chakobsa](https://github.com/n-3-0-l-d-3-v/chakobsa) | THE LANGUAGE | Phase 3 | COMPLETE |
 | [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) | THE KERNEL | Phase 4 | COMPLETE |
 | [sietch](https://github.com/n-3-0-l-d-3-v/sietch) | THE VAULT | Phase 2 | COMPLETE |
-| [choam](https://github.com/n-3-0-l-d-3-v/choam) | THE DATABASE | Phase 6 | QUEUED |
+| [choam](https://github.com/n-3-0-l-d-3-v/choam) | THE DATABASE | Phase 6 | ACTIVE |
 | [distrans](https://github.com/n-3-0-l-d-3-v/distrans) | THE WIRE | Phase 5 | COMPLETE |
 | [landsraad](https://github.com/n-3-0-l-d-3-v/landsraad) | THE COLONY | Phase 7 | QUEUED |
 | [ghola](https://github.com/n-3-0-l-d-3-v/ghola) | THE HISTORY | Phase 8 | QUEUED |
@@ -435,3 +435,14 @@ phase's research question ("how much of TCP is forced by physics versus
 convention?") by collecting every ticket's own forced-vs-chosen finding.
 See
 [distrans's ADR-006](https://github.com/n-3-0-l-d-3-v/distrans/blob/main/docs/design/decisions/ADR-006-integration-and-benchmarks.md).
+
+**Phase 6 — THE DATABASE is now active.** `choam` builds a relational
+database that runs entirely on `sietch`'s own storage engine.
+Checking `sietch`'s actual code before planning ticket 001 showed it
+already provides PUT/GET/DELETE/SCAN/SNAPSHOT and real Snapshot
+Isolation (`TransactionalStore`, Phase 2 ticket 007) — so ticket 001 is
+the relational row/catalog encoding on top of those, not rebuilding
+them, and ticket 002 is proving relational-level isolation holds once
+real rows are involved, not just inheriting the byte-key guarantee by
+assumption. See
+[choam's docs/design/DATABASE.md](https://github.com/n-3-0-l-d-3-v/choam/blob/main/docs/design/DATABASE.md).
