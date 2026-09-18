@@ -363,3 +363,22 @@ cases each), then fed through a real hostile channel at 40%
 corruption / 30% truncation across 40 seeds to prove the two crates
 actually compose. See
 [distrans's ADR-002](https://github.com/n-3-0-l-d-3-v/distrans/blob/main/docs/design/decisions/ADR-002-framing-and-integrity.md).
+
+**Ticket 003 (reliable, ordered transport) is also done.** `distrans`'s
+`crates/transport`: a real connection state machine over the hostile
+channel — 3-way handshake, byte-offset sequencing (unlike TCP, SYN/FIN
+don't consume sequence-number space — an examined, documented choice),
+cumulative + selective ACKs, a selective-repeat receive buffer, adaptive
+RTO with Karn's algorithm, graceful teardown. Getting the end-to-end
+tests to pass surfaced two real state-transition races (a `Closed`
+connection ignoring a lingering retransmitted FIN, and a handshake that
+could strand the server if one bare completing ACK was lost even though
+the client itself was already sending data fine), both fixed and pinned
+with deterministic regression tests once the original statistical test
+that found them turned out not to reliably re-catch either on its own. A
+third finding was in the test itself: its "always fully completes"
+assertion was stronger than bounded retries can honestly promise against
+a sufficiently hostile (but still sub-total) fault profile; fixed to
+assert what's actually always true — delivered data is a clean prefix of
+what was sent — instead of narrowing the test to hide it. See
+[distrans's ADR-003](https://github.com/n-3-0-l-d-3-v/distrans/blob/main/docs/design/decisions/ADR-003-reliable-transport.md).
