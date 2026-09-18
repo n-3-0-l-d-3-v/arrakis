@@ -30,7 +30,7 @@ subdirectory, so this repo always reflects one integrated whole.
 | [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) | THE KERNEL | Phase 4 | COMPLETE |
 | [sietch](https://github.com/n-3-0-l-d-3-v/sietch) | THE VAULT | Phase 2 | COMPLETE |
 | [choam](https://github.com/n-3-0-l-d-3-v/choam) | THE DATABASE | Phase 6 | QUEUED |
-| [distrans](https://github.com/n-3-0-l-d-3-v/distrans) | THE WIRE | Phase 5 | ACTIVE |
+| [distrans](https://github.com/n-3-0-l-d-3-v/distrans) | THE WIRE | Phase 5 | COMPLETE |
 | [landsraad](https://github.com/n-3-0-l-d-3-v/landsraad) | THE COLONY | Phase 7 | QUEUED |
 | [ghola](https://github.com/n-3-0-l-d-3-v/ghola) | THE HISTORY | Phase 8 | QUEUED |
 | [shai-hulud](https://github.com/n-3-0-l-d-3-v/shai-hulud) | THE ARTIFACT | Phase 9 | STRETCH |
@@ -412,3 +412,26 @@ nicety: proven end to end that every request's handler runs exactly
 once and every response for one request is identical across however
 many times it was retried. See
 [distrans's ADR-005](https://github.com/n-3-0-l-d-3-v/distrans/blob/main/docs/design/decisions/ADR-005-rpc.md).
+
+**Ticket 006 (integration and benchmarks) is done — Phase 5 (THE WIRE)
+is complete.** `distrans`'s closing workload is a real get/put/delete
+key-value service on `rpc`, driven by several simulated clients through
+five named hostile profiles, checked by seeded chaos testing that
+replays the real server's exact execution order against an
+independently-written reference store — which caught a deliberately
+reintroduced bug immediately, confirming the oracle has teeth. Two
+from-scratch reference ARQ schemes (stop-and-wait, go-back-N, built
+directly on `frame`/`channel`, not reusing `transport`) gave a real,
+unsmoothed comparison: go-back-N pipelines beautifully on an ideal
+channel (7.7× stop-and-wait) but collapses to *worse than stop-and-wait*
+the instant any reordering appears at all, since its receiver discards
+anything out of order exactly as if it were lost — real, measured
+justification for this transport's own selective-repeat design.
+`distrans` dominates at low-to-moderate loss but is the *worst*
+performer at 20% loss, where AIMD's multiplicative decrease repeatedly
+collapses the congestion window faster than slow start can recover
+it — reported honestly rather than hidden. The closing ADR answers the
+phase's research question ("how much of TCP is forced by physics versus
+convention?") by collecting every ticket's own forced-vs-chosen finding.
+See
+[distrans's ADR-006](https://github.com/n-3-0-l-d-3-v/distrans/blob/main/docs/design/decisions/ADR-006-integration-and-benchmarks.md).
