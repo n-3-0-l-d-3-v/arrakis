@@ -399,3 +399,16 @@ measurement found something worth reporting: quadrupling the receive
 window bought nothing once the congestion window, not the receive
 window, was the real bottleneck. See
 [distrans's ADR-004](https://github.com/n-3-0-l-d-3-v/distrans/blob/main/docs/design/decisions/ADR-004-flow-and-congestion-control.md).
+
+**Ticket 005 (RPC with idempotent retry) is also done.** `distrans`'s
+`crates/rpc` frames requests/responses over `transport`'s byte stream
+(which has no message boundaries of its own) and retries independently
+of the connection's own reliable delivery — deliberately, since a
+client's patience and the connection's retry budget are different
+things. The test harness forces frequent retries via a short, fixed
+deadline rather than only relying on packet loss, which is exactly what
+makes the server's dedup table load-bearing rather than a defensive
+nicety: proven end to end that every request's handler runs exactly
+once and every response for one request is identical across however
+many times it was retried. See
+[distrans's ADR-005](https://github.com/n-3-0-l-d-3-v/distrans/blob/main/docs/design/decisions/ADR-005-rpc.md).
