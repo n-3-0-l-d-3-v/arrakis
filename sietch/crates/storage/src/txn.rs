@@ -104,6 +104,34 @@ impl Transaction {
         self.store.lock().unwrap().get_at(key, self.snapshot)
     }
 
+    /// Every live key starting with `prefix` as this transaction sees it,
+    /// in key order: the snapshot's view merged with this transaction's
+    /// own buffered puts and deletes (a buffered delete hides a key, a
+    /// buffered put adds or overrides one).
+    pub fn scan(&self, prefix: &[u8]) -> Vec<(Vec<u8>, Vec<u8>)> {
+        let mut merged: BTreeMap<Vec<u8>, Vec<u8>> = self
+            .store
+            .lock()
+            .unwrap()
+            .scan_at(prefix, self.snapshot)
+            .into_iter()
+            .collect();
+        for (key, buffered) in self.writes.range(prefix.to_vec()..) {
+            if !key.starts_with(prefix) {
+                break;
+            }
+            match buffered {
+                Some(v) => {
+                    merged.insert(key.clone(), v.clone());
+                }
+                None => {
+                    merged.remove(key);
+                }
+            }
+        }
+        merged.into_iter().collect()
+    }
+
     pub fn put(&mut self, key: impl Into<Vec<u8>>, value: impl Into<Vec<u8>>) {
         self.writes.insert(key.into(), Some(value.into()));
     }
@@ -316,5 +344,42 @@ mod tests {
         let ts = TransactionalStore::open(dir.path()).unwrap();
         let txn = ts.begin();
         assert!(txn.commit().is_ok());
+    }
+
+    #[test]
+    fn scan_merges_snapshot_with_own_buffered_writes() {
+        let dir = tempdir().unwrap();
+        let ts = TransactionalStore::open(dir.path()).unwrap();
+        {
+            let mut t = ts.begin();
+            t.put("p/a", "1");
+            t.put("p/b", "2");
+            t.put("q/x", "9");
+            t.commit().unwrap();
+        }
+        let mut txn = ts.begin();
+        txn.delete("p/a");
+        txn.put("p/c", "3");
+        txn.put("p/b", "22");
+        let got = txn.scan(b"p/");
+        assert_eq!(
+            got,
+            vec![
+                (b"p/b".to_vec(), b"22".to_vec()),
+                (b"p/c".to_vec(), b"3".to_vec())
+            ]
+        );
+    }
+
+    #[test]
+    fn scan_is_pinned_to_the_snapshot() {
+        let dir = tempdir().unwrap();
+        let ts = TransactionalStore::open(dir.path()).unwrap();
+        let reader = ts.begin();
+        let mut w = ts.begin();
+        w.put("p/a", "1");
+        w.commit().unwrap();
+        assert!(reader.scan(b"p/").is_empty());
+        assert_eq!(ts.begin().scan(b"p/").len(), 1);
     }
 }
