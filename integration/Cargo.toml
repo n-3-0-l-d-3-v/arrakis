@@ -1,0 +1,48 @@
+[package]
+name = "arrakis-integration"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Phase 10: one operation traced through every ARRAKIS layer"
+
+[workspace]
+
+[dependencies]
+# Every subsystem is used from its mirrored copy in this repository.
+isa = { path = "../mentat/crates/isa" }
+vm = { path = "../mentat/crates/vm" }
+parser = { path = "../chakobsa/crates/parser" }
+ir = { path = "../chakobsa/crates/ir" }
+codegen = { path = "../chakobsa/crates/codegen" }
+capability = { path = "../muaddib/crates/capability" }
+engine = { path = "../choam/crates/engine" }
+row = { path = "../choam/crates/row" }
+raft = { path = "../landsraad/crates/raft" }
+sim = { path = "../landsraad/crates/sim" }
+kv = { path = "../landsraad/crates/kv" }
+object = { path = "../ghola/crates/object" }
+repo = { path = "../ghola/crates/repo" }
+sync = { path = "../ghola/crates/sync" }
+channel = { path = "../distrans/crates/channel" }
+storage = { path = "../sietch/crates/storage" }
+serde_json = "1"
+tempfile = "3"
+
+[dev-dependencies]
+proptest = "1"
+
+# Subsystems depend on each other through GitHub. Redirect those to the local
+# mirrored copies so the whole build is one consistent set of crates (types
+# like `channel::FaultProfile` must be the same type everywhere).
+[patch."https://github.com/n-3-0-l-d-3-v/sietch.git"]
+storage = { path = "../sietch/crates/storage" }
+
+[patch."https://github.com/n-3-0-l-d-3-v/distrans.git"]
+channel = { path = "../distrans/crates/channel" }
+frame = { path = "../distrans/crates/frame" }
+transport = { path = "../distrans/crates/transport" }
+rpc = { path = "../distrans/crates/rpc" }
+
+[patch."https://github.com/n-3-0-l-d-3-v/mentat.git"]
+isa = { path = "../mentat/crates/isa" }
+vm = { path = "../mentat/crates/vm" }
