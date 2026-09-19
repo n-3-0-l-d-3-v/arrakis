@@ -31,7 +31,7 @@ subdirectory, so this repo always reflects one integrated whole.
 | [sietch](https://github.com/n-3-0-l-d-3-v/sietch) | THE VAULT | Phase 2 | COMPLETE |
 | [choam](https://github.com/n-3-0-l-d-3-v/choam) | THE DATABASE | Phase 6 | COMPLETE |
 | [distrans](https://github.com/n-3-0-l-d-3-v/distrans) | THE WIRE | Phase 5 | COMPLETE |
-| [landsraad](https://github.com/n-3-0-l-d-3-v/landsraad) | THE COLONY | Phase 7 | QUEUED |
+| [landsraad](https://github.com/n-3-0-l-d-3-v/landsraad) | THE COLONY | Phase 7 | COMPLETE |
 | [ghola](https://github.com/n-3-0-l-d-3-v/ghola) | THE HISTORY | Phase 8 | QUEUED |
 | [shai-hulud](https://github.com/n-3-0-l-d-3-v/shai-hulud) | THE ARTIFACT | Phase 9 | STRETCH |
 
@@ -489,3 +489,15 @@ reference model caught a real bug (type errors that depended on whether rows
 existed). A concurrent bank-transfer workload proves no lost updates under
 real contention, and measured numbers are in
 [choam's ADR-005](https://github.com/n-3-0-l-d-3-v/choam/blob/main/docs/design/decisions/ADR-005-shell-workload-and-measurements.md).
+
+**Phase 7 — THE COLONY is complete.** `landsraad` is a Raft-style consensus
+stack in virtual time: messages ride in distrans frames, node state persists
+on sietch, and a simulated cluster (per-link hostile channels, partitions,
+crash/restart including crash-after-persist) is checked every tick for
+election safety, log matching, leader completeness, state-machine safety and
+durability. A replicated key-value store sits on top, and `landsraad-chaos`
+runs reproducible fault schedules. Validating the checker by injecting five
+real Raft bugs: four were caught (one only at 1,500 runs); the fifth, the
+Figure 8 commit bug, is caught by a scripted test but not by random search.
+Measuring exposed a real simulator bug, now fixed. See
+[landsraad's ADR-005](https://github.com/n-3-0-l-d-3-v/landsraad/blob/main/docs/design/decisions/ADR-005-chaos-runner-and-measurements.md).
