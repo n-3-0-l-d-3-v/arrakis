@@ -29,7 +29,7 @@ subdirectory, so this repo always reflects one integrated whole.
 | [chakobsa](https://github.com/n-3-0-l-d-3-v/chakobsa) | THE LANGUAGE | Phase 3 | COMPLETE |
 | [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) | THE KERNEL | Phase 4 | COMPLETE |
 | [sietch](https://github.com/n-3-0-l-d-3-v/sietch) | THE VAULT | Phase 2 | COMPLETE |
-| [choam](https://github.com/n-3-0-l-d-3-v/choam) | THE DATABASE | Phase 6 | ACTIVE |
+| [choam](https://github.com/n-3-0-l-d-3-v/choam) | THE DATABASE | Phase 6 | COMPLETE |
 | [distrans](https://github.com/n-3-0-l-d-3-v/distrans) | THE WIRE | Phase 5 | COMPLETE |
 | [landsraad](https://github.com/n-3-0-l-d-3-v/landsraad) | THE COLONY | Phase 7 | QUEUED |
 | [ghola](https://github.com/n-3-0-l-d-3-v/ghola) | THE HISTORY | Phase 8 | QUEUED |
@@ -478,3 +478,14 @@ retried). A concurrent-commit property test (checked against a serial
 replay; SI's write-skew gap is stated, not hidden) and a differential
 test against a `HashMap` are both mutation-checked. See
 [choam's ADR-002](https://github.com/n-3-0-l-d-3-v/choam/blob/main/docs/design/decisions/ADR-002-relational-transactions.md).
+
+**Phase 6 — THE DATABASE is complete (choam tickets 003-005).** A hand-written
+SQL lexer/parser (round-trip and never-panics properties), an executor with
+three-valued logic, static type checking, autocommit and explicit
+transactions, point-lookup vs scan access paths, and `choamc`, a real SQL
+shell. Building it needed `Transaction::scan` in sietch (ticket 014) and
+exposed a latent `txn` panic; the differential test against an independent
+reference model caught a real bug (type errors that depended on whether rows
+existed). A concurrent bank-transfer workload proves no lost updates under
+real contention, and measured numbers are in
+[choam's ADR-005](https://github.com/n-3-0-l-d-3-v/choam/blob/main/docs/design/decisions/ADR-005-shell-workload-and-measurements.md).
