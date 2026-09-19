@@ -32,7 +32,7 @@ subdirectory, so this repo always reflects one integrated whole.
 | [choam](https://github.com/n-3-0-l-d-3-v/choam) | THE DATABASE | Phase 6 | COMPLETE |
 | [distrans](https://github.com/n-3-0-l-d-3-v/distrans) | THE WIRE | Phase 5 | COMPLETE |
 | [landsraad](https://github.com/n-3-0-l-d-3-v/landsraad) | THE COLONY | Phase 7 | COMPLETE |
-| [ghola](https://github.com/n-3-0-l-d-3-v/ghola) | THE HISTORY | Phase 8 | QUEUED |
+| [ghola](https://github.com/n-3-0-l-d-3-v/ghola) | THE HISTORY | Phase 8 | COMPLETE |
 | [shai-hulud](https://github.com/n-3-0-l-d-3-v/shai-hulud) | THE ARTIFACT | Phase 9 | STRETCH |
 
 ## Reading order
@@ -501,3 +501,14 @@ real Raft bugs: four were caught (one only at 1,500 runs); the fifth, the
 Figure 8 commit bug, is caught by a scripted test but not by random search.
 Measuring exposed a real simulator bug, now fixed. See
 [landsraad's ADR-005](https://github.com/n-3-0-l-d-3-v/landsraad/blob/main/docs/design/decisions/ADR-005-chaos-runner-and-measurements.md).
+
+**Phase 8 — THE HISTORY is complete.** `ghola` is a Git-like version-control
+system with no stored diffs: a from-scratch SHA-256, canonical content-addressed
+objects, a verified object store on sietch, the commit DAG, Myers diff and
+three-way merge, a real command line (`ghola init/commit/log/status/diff/branch/
+checkout/merge/fetch/push/pull`), and synchronization over distrans's hostile
+simulated network with an untrusted peer on both sides. Measured: 100 commits of a
+50-file tree store at 3.7% of full copies; loss costs latency, not bandwidth (10% loss:
+129x the ticks for 1.4x the datagrams). Found along the way: distrans's RPC layer
+resends whole requests on a fixed deadline and collapses under large messages. See
+[ghola's ADR-007](https://github.com/n-3-0-l-d-3-v/ghola/blob/main/docs/design/decisions/ADR-007-sync-over-distrans.md).
