@@ -12,7 +12,7 @@ Vertical slices, not horizontal layers built to 80% in parallel.
 - **Phase 7 — landsraad.** 3-node replication, leader election, Raft-like consensus, chaos engine, recovery.
 - **Phase 8 — ghola.** Content-addressed DAG version control over sietch + distrans.
 - **Phase 9 — shai-hulud.** Stretch goal: package a meaningful runtime slice into a non-executable data format.
-- **Phase 10 — Full integration.** A single vertical operation (e.g. `xgit clone`) traced end-to-end through every layer.
+- **Phase 10 — Full integration (DONE).** A single vertical operation (e.g. `xgit clone`) traced end-to-end through every layer.
 
 Each phase only starts once the previous phase's Definition of Done is met,
 or is explicitly descoped per [docs/FALLBACK.md](docs/FALLBACK.md).

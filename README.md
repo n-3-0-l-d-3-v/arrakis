@@ -512,3 +512,13 @@ simulated network with an untrusted peer on both sides. Measured: 100 commits of
 129x the ticks for 1.4x the datagrams). Found along the way: distrans's RPC layer
 resends whole requests on a fixed deadline and collapses under large messages. See
 [ghola's ADR-007](https://github.com/n-3-0-l-d-3-v/ghola/blob/main/docs/design/decisions/ADR-007-sync-over-distrans.md).
+
+**Phase 10 — Full integration is complete (Level 3, "Full Arrakis").** One
+operation, [traced through eight layers](docs/INTEGRATION.md): chakobsa compiles a
+program to mentat bytecode; ghola commits it on sietch; choam indexes it in SQL;
+distrans carries it across hostile networks; a 3-node landsraad cluster, crashed and
+partitioned while it works, agrees on the published head; the consumer verifies every
+hash, runs the bytecode on mentat under an attenuated muaddib capability, and gets the
+same answer. `cd integration && cargo run --release --bin arrakis-demo -- --loss 0.15 --chaos`.
+Sabotaging the artifact on the server or the SQL registry aborts the run before anything
+executes.
