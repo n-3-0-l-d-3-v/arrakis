@@ -464,3 +464,17 @@ coincidental encoding collision no real table (which has exactly one
 primary-key type) could ever produce — fixed to draw both keys from one
 chosen type. See
 [choam's ADR-001](https://github.com/n-3-0-l-d-3-v/choam/blob/main/docs/design/decisions/ADR-001-row-encoding-and-catalog.md).
+
+**Ticket 002 (relational transactions) is done.** `choam`'s `txn` crate
+gives a `Database::begin` -> `RelTransaction` API (read/write/delete/
+commit/abort) as a thin translation over one `sietch::Transaction`, so
+multi-row, multi-table commits are atomic with Snapshot Isolation and
+first-committer-wins inherited unchanged; conflicts surface as a typed
+error naming the table and primary key. Checking assumptions first found
+`TransactionalStore` has no `scan` and that catalog and row data must
+share one store handle, so the catalog moved onto it with an explicit
+table-name index (concurrent `CREATE TABLE` can now conflict and be
+retried). A concurrent-commit property test (checked against a serial
+replay; SI's write-skew gap is stated, not hidden) and a differential
+test against a `HashMap` are both mutation-checked. See
+[choam's ADR-002](https://github.com/n-3-0-l-d-3-v/choam/blob/main/docs/design/decisions/ADR-002-relational-transactions.md).
