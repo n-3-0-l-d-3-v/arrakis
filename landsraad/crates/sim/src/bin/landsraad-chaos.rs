@@ -102,6 +102,13 @@ fn measure() {
     }
 }
 
+const USAGE: &str = "usage: landsraad-chaos [--runs N] [--ticks T] [--seed S] [--churn] | --measure
+  --runs N    independent seeded cluster runs (default 200)
+  --ticks T   virtual ticks per run (default 4000)
+  --seed S    first seed; runs use seeds S..S+N, and --seed S --runs 1 replays run S
+  --churn     the hardest setting: short election timeouts, doubled crash/partition rates
+  --measure   print deterministic commit-latency measurements instead";
+
 fn main() -> ExitCode {
     let (mut runs, mut ticks, mut start, mut churn, mut do_measure) =
         (200u64, 4000u64, 0u64, false, false);
@@ -109,7 +116,10 @@ fn main() -> ExitCode {
     while let Some(a) = args.next() {
         let mut num = |name: &str| -> u64 {
             args.next().and_then(|v| v.parse().ok()).unwrap_or_else(|| {
-                eprintln!("{name} needs a number");
+                eprintln!(
+                    "error: {name} needs a number
+{USAGE}"
+                );
                 std::process::exit(2)
             })
         };
@@ -119,8 +129,12 @@ fn main() -> ExitCode {
             "--seed" => start = num("--seed"),
             "--churn" => churn = true,
             "--measure" => do_measure = true,
+            "-h" | "--help" => {
+                println!("{USAGE}");
+                return ExitCode::SUCCESS;
+            }
             other => {
-                eprintln!("unknown argument {other:?}\nusage: landsraad-chaos [--runs N] [--ticks T] [--seed S] [--churn] | --measure");
+                eprintln!("error: unknown argument {other:?}\n{USAGE}");
                 return ExitCode::from(2);
             }
         }
