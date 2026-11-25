@@ -3,7 +3,7 @@ name = "arrakis-integration"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-description = "Phase 10: one operation traced through every ARRAKIS layer"
+description = "Phase 10: one operation traced through every ARRAKIS layer, and the `arrakis` front-door CLI"
 
 [workspace]
 
@@ -25,7 +25,11 @@ repo = { path = "../ghola/crates/repo" }
 sync = { path = "../ghola/crates/sync" }
 channel = { path = "../distrans/crates/channel" }
 storage = { path = "../sietch/crates/storage" }
+asm = { path = "../mentat/crates/asm" }
+artifact = { path = "../shai-hulud/crates/artifact" }
 serde_json = "1"
+base64 = "0.22"
+clap = { version = "4", features = ["derive"] }
 tempfile = "3"
 
 [dev-dependencies]
@@ -46,3 +50,4 @@ rpc = { path = "../distrans/crates/rpc" }
 [patch."https://github.com/n-3-0-l-d-3-v/mentat.git"]
 isa = { path = "../mentat/crates/isa" }
 vm = { path = "../mentat/crates/vm" }
+asm = { path = "../mentat/crates/asm" }

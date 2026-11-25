@@ -18,6 +18,8 @@
 //! hashes, identical result), and the trace records what each layer did.
 
 mod pipeline;
+pub mod report;
+pub mod tools;
 mod trace;
 
 pub use pipeline::{compile_to_artifact, run_artifact, Outcome, PipelineError, Scenario, Tamper};

@@ -33,6 +33,18 @@ fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
+/// A SQL value as a person would write it (long hex ids shortened).
+fn show_value(v: &Value) -> String {
+    match v {
+        Value::Text(s) if s.len() > 16 => format!("{}..", &s[..12]),
+        Value::Text(s) => format!("'{s}'"),
+        other => format!("{other:?}")
+            .trim_start_matches("Integer(")
+            .trim_end_matches(')')
+            .to_string(),
+    }
+}
+
 fn dir_bytes(dir: &Path) -> u64 {
     std::fs::read_dir(dir)
         .map(|it| {
@@ -275,8 +287,10 @@ impl Scenario {
         t.note(
             "choam",
             format!(
-                "indexed the release in SQL and read it back: {:?}",
-                registry_rows[0][..3].to_vec()
+                "indexed the release in SQL and read it back: (version {}, commit {}, {} bytes)",
+                show_value(&registry_rows[0][0]),
+                show_value(&registry_rows[0][1]),
+                show_value(&registry_rows[0][2]),
             ),
         );
 
