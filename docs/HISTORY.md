@@ -1,4 +1,7 @@
-# ARRAKIS
+# ARRAKIS: build history
+
+> The phase-by-phase, ticket-by-ticket record that used to be the top-level
+> README, kept verbatim. The current overview is [../README.md](../README.md).
 
 > Build a real computing ecosystem by systematically removing the assumptions
 > that make conventional computers easy to build, then prove through
@@ -37,12 +40,12 @@ subdirectory, so this repo always reflects one integrated whole.
 
 ## Reading order
 
-Start with [docs/PHASES.md](docs/PHASES.md) for the development order and
-[docs/CONSTRAINT_MATRIX.md](docs/CONSTRAINT_MATRIX.md) for how each layer's
-constraint forces its design. [SCOPE.md](SCOPE.md) defines the CORE /
+Start with [docs/PHASES.md](PHASES.md) for the development order and
+[docs/CONSTRAINT_MATRIX.md](CONSTRAINT_MATRIX.md) for how each layer's
+constraint forces its design. [SCOPE.md](../SCOPE.md) defines the CORE /
 EXTENSION / EXPERIMENT classification and the fallback levels (this project
 is designed to degrade gracefully into a smaller complete system rather than
-stall as an unfinished monument — see [docs/FALLBACK.md](docs/FALLBACK.md)).
+stall as an unfinished monument — see [docs/FALLBACK.md](FALLBACK.md)).
 
 ## Status
 
@@ -54,8 +57,8 @@ two-pass assembler, and an `imc` CLI
 programs (loops, recursive function calls, memory through calls) with
 deterministic, tamper-detecting replay and property-based differential
 tests against a reference sequential executor. See
-[mentat/tickets/](mentat/tickets/) and
-[mentat/docs/design/](mentat/docs/design/) (ISA
+[mentat/tickets/](../mentat/tickets/) and
+[mentat/docs/design/](../mentat/docs/design/) (ISA
 spec, ADR-001, ADR-002) for the full record.
 
 **Phase 2 — THE VAULT, tickets 001–005 are done.** A checksummed,
@@ -151,7 +154,7 @@ invalidate an in-flight transaction's reads either. See
 
 **Phase 2 (THE VAULT) is now feature-complete against its original
 ticket list.** See
-[sietch/docs/design/STORAGE.md](sietch/docs/design/STORAGE.md) for the
+[sietch/docs/design/STORAGE.md](../sietch/docs/design/STORAGE.md) for the
 full architecture.
 
 **Phase 3 — THE LANGUAGE is now active.** `chakobsa` compiles a small
@@ -514,7 +517,7 @@ resends whole requests on a fixed deadline and collapses under large messages. S
 [ghola's ADR-007](https://github.com/n-3-0-l-d-3-v/ghola/blob/main/docs/design/decisions/ADR-007-sync-over-distrans.md).
 
 **Phase 10 — Full integration is complete (Level 3, "Full Arrakis").** One
-operation, [traced through eight layers](docs/INTEGRATION.md): chakobsa compiles a
+operation, [traced through eight layers](INTEGRATION.md): chakobsa compiles a
 program to mentat bytecode; ghola commits it on sietch; choam indexes it in SQL;
 distrans carries it across hostile networks; a 3-node landsraad cluster, crashed and
 partitioned while it works, agrees on the published head; the consumer verifies every

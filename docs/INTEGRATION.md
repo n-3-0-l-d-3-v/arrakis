@@ -2,11 +2,13 @@
 
 **One operation, traced through every layer: publish a program, and safely run it somewhere else.**
 
+From the repository root, `./arrakis.sh demo`, `./arrakis.sh chaos` and `./arrakis.sh sabotage` (or `.\arrakis.ps1 ...`) run this with a grouped trace and a summary. The original minimal binary still works:
+
 ```bash
 cd integration
 cargo run --release --bin arrakis-demo                       # clean
 cargo run --release --bin arrakis-demo -- --seed 7 --loss 0.15 --chaos   # hostile
-cargo test                                                   # 8 end-to-end tests
+cargo test                                                   # 8 end-to-end + 6 front-door tests
 ```
 
 ## What happens
