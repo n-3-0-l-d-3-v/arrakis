@@ -3,3 +3,4 @@ Cargo.lock
 *.trace
 *.replay
 .DS_Store
+/out/
