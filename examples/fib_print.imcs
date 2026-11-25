@@ -1,0 +1,23 @@
+block entry:
+    loadi r1, 0
+    loadi r2, 1
+    loadi r5, 0
+    loadi r6, 10
+    jmp check
+
+block check:
+    cmpge r3, r5, r6
+    jnz r3, done
+
+block body:
+    mov r0, r1
+    syscall 0
+    add r4, r1, r2
+    mov r1, r2
+    mov r2, r4
+    loadi r7, 1
+    add r5, r5, r7
+    jmp check
+
+block done:
+    halt
