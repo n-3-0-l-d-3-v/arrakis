@@ -132,3 +132,78 @@ proptest! {
         prop_assert_eq!(svg::unwrap(&svg::wrap(&payload, "t").unwrap()).unwrap(), payload);
     }
 }
+
+/// Audit finding (2026-09-23): a title containing the container's own marker
+/// made `pdf::wrap` write a file that `extract` refused as ambiguous. Page
+/// text is now written as PDF hex strings (ADR-002), so no title can forge
+/// structure; the SVG title was already XML-escaped.
+#[test]
+fn a_title_that_looks_like_container_structure_cannot_break_the_container() {
+    for title in [
+        "x /Type /EmbeddedFile y",
+        "/IMC_SHA256 (deadbeef)",
+        "<imc:program encoding=\"base64\" sha256=\"0\">AA==</imc:program>",
+        "stream\nendstream endobj trailer %%EOF",
+    ] {
+        for fmt in [Format::Pdf, Format::Svg] {
+            let bytes = embed(fmt, &program(), title).unwrap();
+            let report = run(extract(&bytes).unwrap(), 1 << 20, 1_000_000);
+            assert_eq!(report.output, vec!["15".to_string()], "{fmt:?} {title:?}");
+        }
+    }
+}
+
+/// The strings a PDF page draws: every `<hex> Tj` decoded.
+fn pdf_page_text(bytes: &[u8]) -> Vec<String> {
+    let text = String::from_utf8_lossy(bytes);
+    let start = text.find("4 0 obj").unwrap();
+    let end = text[start..].find("endstream").unwrap() + start;
+    text[start..end]
+        .split('<')
+        .skip(2) // "<< /Length" opens the dictionary
+        .filter_map(|s| s.split_once("> Tj"))
+        .map(|(hex, _)| {
+            (0..hex.len())
+                .step_by(2)
+                .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap() as char)
+                .collect()
+        })
+        .collect()
+}
+
+/// The page states only facts derived from the bytes it carries, and never
+/// claims to be verified (a document cannot vouch for itself).
+#[test]
+fn the_page_states_true_facts_and_claims_no_verification() {
+    let p = program();
+    let instructions: usize = p.blocks.iter().map(|b| b.instructions.len()).sum();
+    let payload = serde_json::to_vec(&p).unwrap();
+    let sha = artifact::sha256_hex(&payload);
+    let contents = format!(
+        "{} blocks of mentat bytecode, {instructions} instructions",
+        p.blocks.len()
+    );
+    let entry = format!("block b{} (\"{}\")", p.entry, p.blocks[p.entry].label);
+    let size = format!("{} bytes", payload.len());
+
+    let lines = pdf_page_text(&embed(Format::Pdf, &p, "Sum").unwrap());
+    let svg = String::from_utf8(embed(Format::Svg, &p, "Sum").unwrap()).unwrap();
+    for want in [
+        contents.as_str(),
+        size.as_str(),
+        &sha[..32],
+        &sha[32..],
+        "Sum",
+    ] {
+        assert!(
+            lines.iter().any(|l| l == want),
+            "PDF lacks {want:?}: {lines:?}"
+        );
+        assert!(svg.contains(want), "SVG lacks {want:?}");
+    }
+    assert!(lines.iter().any(|l| l == &entry), "{lines:?}");
+    assert!(svg.contains(&entry.replace('"', "&quot;")));
+    for page in [lines.join("\n"), svg] {
+        assert!(!page.to_lowercase().contains("verified"));
+    }
+}

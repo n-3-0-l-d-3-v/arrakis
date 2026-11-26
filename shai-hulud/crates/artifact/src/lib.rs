@@ -8,6 +8,7 @@
 //! the Machine VM with a memory cap and step budget (the VM has no host I/O
 //! beyond exit and a captured output buffer).
 
+pub mod page;
 pub mod pdf;
 pub mod svg;
 
@@ -66,9 +67,10 @@ pub fn embed(format: Format, program: &isa::Program, title: &str) -> Result<Vec<
     if payload.len() > MAX_PAYLOAD {
         return Err(Error::TooLarge(payload.len()));
     }
+    let facts = page::Facts::of(program);
     match format {
-        Format::Pdf => pdf::wrap(&payload, title),
-        Format::Svg => svg::wrap(&payload, title),
+        Format::Pdf => pdf::wrap_with(&payload, title, Some(&facts)),
+        Format::Svg => svg::wrap_with(&payload, title, Some(&facts)),
     }
 }
 
