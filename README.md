@@ -29,10 +29,27 @@ You need [Rust](https://rustup.rs) (stable) and git. Nothing else.
 
 ```bash
 git clone https://github.com/n-3-0-l-d-3-v/arrakis && cd arrakis
-./arrakis.sh              # Windows PowerShell: .\arrakis.ps1
+./arrakis.sh
 ```
 
-That one command builds the stack and runs every headline demo:
+Windows (PowerShell):
+
+```powershell
+git clone https://github.com/n-3-0-l-d-3-v/arrakis; cd arrakis
+.\arrakis.ps1
+```
+
+If scripts are blocked on your machine (`running scripts is disabled`), run
+`powershell -ExecutionPolicy Bypass -File .\arrakis.ps1` instead, or skip the
+script and use Cargo directly from the repository root: the root `Cargo.toml`
+is a workspace whose default binary is the `arrakis` CLI, and `Cargo.lock` is
+committed, so `--locked` builds exactly the tested dependency set.
+
+```powershell
+cargo run --release --locked -- demo        # or: chaos, sabotage, examples, run examples\fib.ck, --help
+```
+
+That one script command builds the stack and runs every headline demo:
 
 | # | Demo | What you should see |
 |---|---|---|

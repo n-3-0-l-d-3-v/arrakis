@@ -7,6 +7,6 @@ FROM rust:1-slim
 WORKDIR /arrakis
 COPY . .
 RUN chmod +x arrakis.sh \
- && cargo build --release --manifest-path integration/Cargo.toml --bin arrakis
+ && cargo build --release --locked --bin arrakis
 ENTRYPOINT ["./arrakis.sh"]
 CMD ["quickstart"]

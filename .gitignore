@@ -1,5 +1,8 @@
 /target
+# Subsystem lockfiles stay untracked (mirrored from their own repos); the root
+# lockfile pins the one build a newcomer runs, so it is committed.
 Cargo.lock
+!/Cargo.lock
 *.trace
 *.replay
 .DS_Store

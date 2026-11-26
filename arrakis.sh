@@ -53,9 +53,9 @@ artifact() {
   cmd "arrakis open out/fib-tampered.pdf"
   if arrakis open "$OUT/fib-tampered.pdf"; then die "a tampered program was executed"; fi
   ok "   refused, as it must be: one changed character, and nothing runs"
-  cmd "arrakis pack examples/fib_print.imcs -o out/fib.svg && arrakis open out/fib.svg"
+  cmd "arrakis pack examples/fib_print.imcs -o out/fib.svg && arrakis -q open out/fib.svg"
   arrakis pack "$ROOT/examples/fib_print.imcs" -o "$OUT/fib.svg" >/dev/null || die "pack failed"
-  arrakis open "$OUT/fib.svg" | tr '\n' ' '; echo
+  arrakis -q open "$OUT/fib.svg" | tr '\n' ' '; echo
 }
 
 machine() {

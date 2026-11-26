@@ -14,7 +14,7 @@ $ErrorActionPreference = 'Continue'   # native tools report through exit codes
 $Root = $PSScriptRoot
 $Out = Join-Path $Root 'out'
 $Command = if ($args.Count -gt 0) { [string]$args[0] } else { 'quickstart' }
-$Rest = if ($args.Count -gt 1) { $args[1..($args.Count - 1)] } else { @() }
+$Rest = @($args | Select-Object -Skip 1)   # always an array: a lone string would splat char by char
 
 if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
     Write-Host 'error: cargo not found. Install Rust from https://rustup.rs, or run in Docker:' -ForegroundColor Red
@@ -27,15 +27,21 @@ function Cmd([string]$t) { Write-Host "PS> $t" -ForegroundColor Cyan }
 function Ok([string]$t) { Write-Host $t -ForegroundColor Green }
 function Die([string]$t) { Write-Host "error: $t" -ForegroundColor Red; exit 1 }
 
+# cargo's progress and the refusals these demos provoke on purpose arrive on
+# stderr. Windows PowerShell 5.1 wraps redirected stderr lines in red
+# NativeCommandError records; `2>&1 | Plain` shows them as ordinary text.
+# Exit codes are unaffected ($LASTEXITCODE still comes from the native tool).
+function Plain { process { "$_" } }
+
 function Arrakis { cargo run -q --release --manifest-path (Join-Path $Root 'integration\Cargo.toml') --bin arrakis -- @args }
 function Tool([string]$repo, [string]$bin) {
     $a = $args
-    cargo run -q --release --manifest-path (Join-Path $Root "$repo\Cargo.toml") --bin $bin -- @a
+    cargo run -q --release --manifest-path (Join-Path $Root "$repo\Cargo.toml") --bin $bin -- @a 2>&1 | Plain
 }
 
 function Build {
     Say 'building the integration workspace (all eight subsystems; first time: a few minutes)'
-    cargo build --release --manifest-path (Join-Path $Root 'integration\Cargo.toml') --bin arrakis
+    cargo build --release --manifest-path (Join-Path $Root 'integration\Cargo.toml') --bin arrakis 2>&1 | Plain
     if ($LASTEXITCODE) { Die 'build failed' }
 }
 
@@ -49,13 +55,13 @@ function Artifact {
     Cmd 'arrakis open out\fib.pdf'; Arrakis open $pdf; if ($LASTEXITCODE) { Die 'open failed' }
     Cmd 'arrakis tamper out\fib.pdf -o out\fib-tampered.pdf'; Arrakis tamper $pdf -o $bad; if ($LASTEXITCODE) { Die 'tamper failed' }
     Cmd 'arrakis open out\fib-tampered.pdf'
-    Arrakis open $bad
+    Arrakis open $bad 2>&1 | Plain
     if (-not $LASTEXITCODE) { Die 'a tampered program was executed' }
     Ok '   refused, as it must be: one changed character, and nothing runs'
     $svg = Join-Path $Out 'fib.svg'
-    Cmd 'arrakis pack examples\fib_print.imcs -o out\fib.svg; arrakis open out\fib.svg'
+    Cmd 'arrakis pack examples\fib_print.imcs -o out\fib.svg; arrakis -q open out\fib.svg'
     Arrakis pack (Join-Path $Root 'examples\fib_print.imcs') -o $svg | Out-Null
-    (Arrakis open $svg) -join ' '
+    (Arrakis -q open $svg) -join ' '
 }
 
 function Machine {
@@ -139,3 +145,4 @@ switch ($Command) {
     { $_ -in 'help', '-h' } { Get-Content $PSCommandPath -TotalCount 12 | Select-Object -Skip 1 | ForEach-Object { $_ -replace '^# ?', '' } }
     default { Arrakis $Command @Rest; exit $LASTEXITCODE }
 }
+exit 0   # every failure above has already exited 1 through Die

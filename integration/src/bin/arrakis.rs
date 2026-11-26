@@ -9,10 +9,16 @@
 //!   arrakis inspect OUT.pdf       verify the container, show the program
 //!   arrakis open OUT.pdf          verify, then run it in the sandbox
 //!   arrakis tamper OUT.pdf -o BAD.pdf   change one character of the hidden program
+//!
+//! Output streams: everything informational goes to stdout (so PowerShell does
+//! not paint it as a red NativeCommandError when redirected); only real errors
+//! go to stderr, and they always come with a non-zero exit code. `-q/--quiet`
+//! drops the status lines of `run` and `open`, leaving just the program's output.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 
 use arrakis_integration::tools::{self, SourceKind};
@@ -20,6 +26,18 @@ use arrakis_integration::{
     compile_to_artifact, report, run_artifact, Scenario, Tamper, DEMO_RESULT,
 };
 use clap::{Args, Parser, Subcommand};
+
+/// Set once from `--quiet`; read by `status!`.
+static QUIET: AtomicBool = AtomicBool::new(false);
+
+/// An informational line (timing, verification summary): stdout, unless `--quiet`.
+macro_rules! status {
+    ($($t:tt)*) => {
+        if !QUIET.load(Ordering::Relaxed) {
+            println!($($t)*);
+        }
+    };
+}
 
 #[derive(Parser)]
 #[command(
@@ -30,6 +48,9 @@ use clap::{Args, Parser, Subcommand};
     after_help = "Start here:  arrakis demo   then   arrakis chaos   then   arrakis sabotage"
 )]
 struct Cli {
+    /// Only print what the program itself prints (drops status lines from `run` and `open`).
+    #[arg(short, long, global = true)]
+    quiet: bool,
     #[command(subcommand)]
     command: Command,
 }
@@ -114,7 +135,9 @@ enum Command {
 type Res = Result<(), String>;
 
 fn main() -> ExitCode {
-    let result = match Cli::parse().command {
+    let cli = Cli::parse();
+    QUIET.store(cli.quiet, Ordering::Relaxed);
+    let result = match cli.command {
         Command::Demo { h, chaos } => demo(&h, h.loss.unwrap_or(0.0), chaos),
         Command::Chaos { h } => demo(&h, h.loss.unwrap_or(0.15), true),
         Command::Sabotage { seed } => sabotage(seed),
@@ -357,7 +380,7 @@ fn run(file: &Path) -> Res {
                     machine.regs.get(codegen::regalloc::RET_REG) as i64
                 );
             }
-            eprintln!(
+            status!(
                 "[{e:?} after {steps} steps in {:.1} ms; {} bytes of bytecode]",
                 elapsed.as_secs_f64() * 1e3,
                 payload.len()
@@ -453,7 +476,7 @@ fn open(file: &Path, mem: usize, steps: u64) -> Res {
     let bytes = read_bytes(file)?;
     let o = tools::open(&bytes, mem, steps)
         .map_err(|e| format!("{}: {} -- refused, nothing was run", file.display(), e.0))?;
-    eprintln!(
+    status!(
         "verified {} container: sha256 {}.. ({} bytes); running in the sandbox \
          (no host I/O, {} KiB memory, {} step budget)",
         tools::format_name(o.format),
@@ -472,7 +495,7 @@ fn open(file: &Path, mem: usize, steps: u64) -> Res {
             if o.output.is_empty() {
                 println!("returned {}", o.ret);
             }
-            eprintln!("[{e:?} after {} steps]", o.steps);
+            status!("[{e:?} after {} steps]", o.steps);
             Ok(())
         }
         Err(t) => Err(format!(
