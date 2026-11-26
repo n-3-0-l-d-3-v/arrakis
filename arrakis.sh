@@ -15,7 +15,8 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT="$ROOT/out"
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
-  Y=$'\e[1;33m'; C=$'\e[36m'; G=$'\e[32m'; R=$'\e[31m'; N=$'\e[0m'
+  # docs/design direction A: amber headings, dim commands, green ok, red errors
+  Y=$'\e[1;38;5;214m'; C=$'\e[38;5;137m'; G=$'\e[1;38;5;107m'; R=$'\e[1;38;5;203m'; N=$'\e[0m'
 else
   Y=; C=; G=; R=; N=
 fi

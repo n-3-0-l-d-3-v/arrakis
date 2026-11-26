@@ -55,6 +55,27 @@ lines are shortened to fit. Nothing here is implemented yet.
     searches the file text (audit problem 3), so the page text must not
     contain `/Type /EmbeddedFile`. A regression test belongs with the change.
 
+## Status
+
+Approved: A + B overall, C for shai-hulud.
+
+**Applied in Phase 5:**
+- **A, in the `arrakis` CLI** (`integration/src/style.rs`):
+  - The demo/chaos report, `sabotage`, `examples` and `error:` lines.
+  - `--color auto|always|never` and `NO_COLOR` control it.
+  - Redirected output is unchanged plain ASCII, and a test checks this.
+  - Unlike the mockup, demo steps keep their `[layer]` tags and have no
+    right-aligned `ok`. The real step lines are too long to align, and a step
+    that fails stops the run anyway.
+- **A, in the front-door scripts:** their headings and commands use the same
+  palette.
+- **B, in the README:** `banner.svg`, without the status strip, because a
+  static image must not look like a live result.
+
+**Not yet:**
+- C (Phase 6).
+- The subsystem CLIs (`imc`, `vaultc` ...), which keep their own plain output.
+
 ## Recommendation
 
 Use **A + B as the overall identity** and **C for shai-hulud only**. A is

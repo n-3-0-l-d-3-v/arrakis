@@ -22,8 +22,9 @@ if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
-function Say([string]$t) { Write-Host ''; Write-Host "== $t" -ForegroundColor Yellow }
-function Cmd([string]$t) { Write-Host "PS> $t" -ForegroundColor Cyan }
+# docs/design direction A, within the 16 console colours: amber headings, dim commands
+function Say([string]$t) { Write-Host ''; Write-Host "== $t" -ForegroundColor DarkYellow }
+function Cmd([string]$t) { Write-Host "PS> $t" -ForegroundColor DarkGray }
 function Ok([string]$t) { Write-Host $t -ForegroundColor Green }
 function Die([string]$t) { Write-Host "error: $t" -ForegroundColor Red; exit 1 }
 

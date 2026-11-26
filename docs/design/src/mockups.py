@@ -120,8 +120,8 @@ def word(w, x0, y0, col, shadow):
                     g[y][x] = col
 word("ARRAKIS", 8, 8, TXT, "#3a1f2c")
 
-def pixel_svg():
-    w, h = GW * P, GH * P + 58
+def pixel_svg(strip=True):
+    w, h = GW * P, GH * P + (58 if strip else 0)
     o = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" shape-rendering="crispEdges">']
     for y in range(GH):  # merge horizontal runs
         x = 0
@@ -133,6 +133,9 @@ def pixel_svg():
             x = x2
     o.append(f'<text x="48" y="{17*P+10}" font-family="{MONO}" font-size="15" fill="{TXT}">the impossible computer: nine subsystems, one operation, no shortcuts</text>')
     y0 = GH * P
+    if not strip:
+        o.append('</svg>')
+        return "\n".join(o)
     o.append(f'<rect y="{y0}" width="{w}" height="58" fill="#0e0c08"/>')
     o.append(f'<text x="24" y="{y0+35}" font-family="{MONO}" font-size="15" fill="#8a7350">steps</text>')
     for i in range(12):
@@ -142,6 +145,8 @@ def pixel_svg():
     return "\n".join(o)
 
 open(os.path.join(OUT, "direction-b-pixel.svg"), "w", encoding="utf-8").write(pixel_svg())
+# README banner: no status strip (a static image must not look like a live status)
+open(os.path.join(OUT, "banner.svg"), "w", encoding="utf-8").write(pixel_svg(strip=False))
 
 # ---------------------------------------------------------------- C: imperial archive (PDF page)
 PAPER, INK, FADE, RED = "#f3ead6", "#2b2118", "#7d6a52", "#8c2f1f"

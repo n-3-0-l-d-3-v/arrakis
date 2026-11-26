@@ -14,21 +14,46 @@
 //! not paint it as a red NativeCommandError when redirected); only real errors
 //! go to stderr, and they always come with a non-zero exit code. `-q/--quiet`
 //! drops the status lines of `run` and `open`, leaving just the program's output.
+//!
+//! Look (docs/design, direction A): colour only when stdout is a terminal and
+//! `NO_COLOR` is unset (or `--color always`); box-drawing characters only on a
+//! terminal. Redirected output is the plain ASCII it always was.
 
 use std::fs;
+use std::io::IsTerminal;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 
+use anstream::{eprintln, print, println};
+use arrakis_integration::style::{Role, Style};
 use arrakis_integration::tools::{self, SourceKind};
 use arrakis_integration::{
     compile_to_artifact, report, run_artifact, Scenario, Tamper, DEMO_RESULT,
 };
-use clap::{Args, Parser, Subcommand};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 
 /// Set once from `--quiet`; read by `status!`.
 static QUIET: AtomicBool = AtomicBool::new(false);
+
+/// Set once from `--color` and the terminal; read through `style()`.
+static FANCY_COLOR: AtomicBool = AtomicBool::new(false);
+static FANCY_UNICODE: AtomicBool = AtomicBool::new(false);
+
+fn style() -> Style {
+    Style {
+        color: FANCY_COLOR.load(Ordering::Relaxed),
+        unicode: FANCY_UNICODE.load(Ordering::Relaxed),
+    }
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum ColorWhen {
+    Auto,
+    Always,
+    Never,
+}
 
 /// An informational line (timing, verification summary): stdout, unless `--quiet`.
 macro_rules! status {
@@ -51,6 +76,9 @@ struct Cli {
     /// Only print what the program itself prints (drops status lines from `run` and `open`).
     #[arg(short, long, global = true)]
     quiet: bool,
+    /// Colour and box-drawing characters: auto = only on a terminal without NO_COLOR.
+    #[arg(long, global = true, value_enum, default_value_t = ColorWhen::Auto)]
+    color: ColorWhen,
     #[command(subcommand)]
     command: Command,
 }
@@ -137,6 +165,20 @@ type Res = Result<(), String>;
 fn main() -> ExitCode {
     let cli = Cli::parse();
     QUIET.store(cli.quiet, Ordering::Relaxed);
+    let choice = match cli.color {
+        ColorWhen::Auto => anstream::ColorChoice::Auto,
+        ColorWhen::Always => anstream::ColorChoice::Always,
+        ColorWhen::Never => anstream::ColorChoice::Never,
+    };
+    choice.write_global();
+    let color = anstream::AutoStream::choice(&std::io::stdout()) != anstream::ColorChoice::Never;
+    let unicode = match cli.color {
+        ColorWhen::Always => true,
+        ColorWhen::Never => false,
+        ColorWhen::Auto => std::io::stdout().is_terminal(),
+    };
+    FANCY_COLOR.store(color, Ordering::Relaxed);
+    FANCY_UNICODE.store(unicode, Ordering::Relaxed);
     let result = match cli.command {
         Command::Demo { h, chaos } => demo(&h, h.loss.unwrap_or(0.0), chaos),
         Command::Chaos { h } => demo(&h, h.loss.unwrap_or(0.15), true),
@@ -171,7 +213,13 @@ fn main() -> ExitCode {
     match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
-            eprintln!("error: {e}");
+            let red =
+                anstream::AutoStream::choice(&std::io::stderr()) != anstream::ColorChoice::Never;
+            let st = Style {
+                color: red,
+                unicode: false,
+            };
+            eprintln!("{} {e}", st.paint(Role::Bad, "error:"));
             ExitCode::FAILURE
         }
     }
@@ -211,7 +259,7 @@ fn demo(h: &Hostility, loss: f64, chaos: bool) -> Res {
         }
         None => "built-in demo: fact(6) + sum_to(10), recursion and a loop".to_string(),
     };
-    print!("{}", report::header(&s, &label));
+    print!("{}", report::header(&s, &label, style()));
     let dir = workdir()?;
     let started = Instant::now();
     let outcome = s.run(dir.path()).map_err(|e| {
@@ -221,7 +269,7 @@ fn demo(h: &Hostility, loss: f64, chaos: bool) -> Res {
         )
     })?;
     let elapsed = started.elapsed();
-    print!("{}", report::stages(&outcome));
+    print!("{}", report::stages(&outcome, style()));
     let mut replay = format!(
         "arrakis {} --seed {}",
         if chaos { "chaos" } else { "demo" },
@@ -231,7 +279,10 @@ fn demo(h: &Hostility, loss: f64, chaos: bool) -> Res {
         replay.push_str(&format!(" --program {}", p.display()));
     }
     replay.push_str("   reproduces this run exactly");
-    print!("{}", report::summary(&s, &outcome, elapsed, &replay));
+    print!(
+        "{}",
+        report::summary(&s, &outcome, elapsed, &replay, style())
+    );
     if let Some(v) = expect {
         if outcome.consumer_result != v {
             return Err(format!(
@@ -244,7 +295,13 @@ fn demo(h: &Hostility, loss: f64, chaos: bool) -> Res {
 }
 
 fn sabotage(seed: u64) -> Res {
-    println!("ARRAKIS  sabotage: every verification layer must be load-bearing\n");
+    let st = style();
+    let title = if st.color {
+        st.paint(Role::Title, " ARRAKIS ") + " "
+    } else {
+        "ARRAKIS  ".to_string()
+    };
+    println!("{title}sabotage: every verification layer must be load-bearing\n");
     let cases = [
         (
             Tamper::ServerBlob,
@@ -264,19 +321,29 @@ fn sabotage(seed: u64) -> Res {
         match s.run(dir.path()) {
             Err(e) => {
                 caught += 1;
-                println!("    REFUSED: {}", e.0);
-                println!("    nothing was executed on the consumer\n");
+                println!("    {} {}", st.paint(Role::Bad, "REFUSED:"), e.0);
+                println!(
+                    "    {}\n",
+                    st.paint(Role::Label, "nothing was executed on the consumer")
+                );
             }
             Ok(o) => {
                 println!(
-                    "    NOT CAUGHT: the consumer ran it and got {}\n",
+                    "    {} the consumer ran it and got {}\n",
+                    st.paint(Role::Bad, "NOT CAUGHT:"),
                     o.consumer_result
                 );
             }
         }
     }
     if caught == cases.len() {
-        println!("both attacks were stopped before execution, by two independent checks");
+        println!(
+            "{}",
+            st.paint(
+                Role::Good,
+                "both attacks were stopped before execution, by two independent checks"
+            )
+        );
         Ok(())
     } else {
         Err("a sabotaged release was executed".into())
@@ -296,6 +363,7 @@ fn examples(dir: &Path, seed: u64, loss: f64) -> Res {
         .filter(|p| p.extension().is_some_and(|x| x == "ck"))
         .collect();
     files.sort();
+    let st = style();
     if files.is_empty() {
         return Err(format!("no .ck programs in {}", dir.display()));
     }
@@ -337,19 +405,29 @@ fn examples(dir: &Path, seed: u64, loss: f64) -> Res {
                     o.consumer_result,
                     size,
                     &o.commit.to_hex()[..12],
-                    if ok { "ok" } else { "MISMATCH" }
+                    if ok {
+                        st.paint(Role::Good, "ok")
+                    } else {
+                        st.paint(Role::Bad, "MISMATCH")
+                    }
                 );
             }
             (Err(e), _) | (_, Err(e)) => {
                 failures += 1;
-                println!("  {name:<14} FAILED: {}", e.0);
+                println!("  {name:<14} {} {}", st.paint(Role::Bad, "FAILED:"), e.0);
             }
         }
     }
     if failures == 0 {
         println!(
-            "\nall {} programs agree: expected = local = after the hostile trip",
-            files.len()
+            "\n{}",
+            st.paint(
+                Role::Good,
+                &format!(
+                    "all {} programs agree: expected = local = after the hostile trip",
+                    files.len()
+                )
+            )
         );
         Ok(())
     } else {

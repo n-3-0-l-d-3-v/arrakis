@@ -172,3 +172,38 @@ proptest! {
         prop_assert_eq!(o.consumer_result, e.eval());
     }
 }
+
+/// Redirected output (a log, a pipe, Windows PowerShell capturing it) gets the
+/// plain style: pure ASCII, no escape codes. The terminal style differs only
+/// by colour and box-drawing characters: strip those and the words are the same.
+#[test]
+fn the_plain_report_is_ascii_and_the_fancy_one_says_the_same_thing() {
+    use arrakis_integration::report;
+    use arrakis_integration::style::Style;
+    let dir = tempfile::tempdir().unwrap();
+    let s = Scenario::hostile(5, 0.1);
+    let o = s.run(dir.path()).unwrap();
+    let render = |st| {
+        let d = std::time::Duration::from_millis(1);
+        report::header(&s, "p", st) + &report::stages(&o, st) + &report::summary(&s, &o, d, "r", st)
+    };
+    let plain = render(Style::PLAIN);
+    assert!(plain.is_ascii() && !plain.contains('\x1b'), "{plain}");
+    assert!(plain.contains("  1. [chakobsa ]") && plain.contains("VERIFIED"));
+    let fancy = render(Style::FANCY);
+    assert!(fancy.contains('\x1b') && fancy.contains('─'));
+    let mut stripped = String::new();
+    let mut esc = false;
+    for c in fancy.chars() {
+        match (esc, c) {
+            (false, '\x1b') => esc = true,
+            (true, 'm') => esc = false,
+            (true, _) => {}
+            (false, '─') => stripped.push('-'),
+            (false, '▌') => {}
+            (false, c) => stripped.push(c),
+        }
+    }
+    let words = |t: &str| t.split_whitespace().collect::<Vec<_>>().join(" ");
+    assert_eq!(words(&stripped), words(&plain));
+}

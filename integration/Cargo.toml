@@ -29,6 +29,7 @@ artifact = { path = "../shai-hulud/crates/artifact" }
 serde_json = "1"
 base64 = "0.22"
 clap = { version = "4", features = ["derive"] }
+anstream = "1"
 tempfile = "3"
 
 [dev-dependencies]

@@ -1,5 +1,7 @@
 # ARRAKIS — the impossible computer
 
+![ARRAKIS: pixel-art dunes under two moons, a sandworm breaching](docs/design/banner.svg)
+
 **Eight working subsystems, each built after removing one thing ordinary computers can't live without:** a CPU with no instruction pointer, storage that never overwrites a byte, a compiler with no syntax tree, a kernel with no paths and no clock, a network that lies. Then all eight carry **one real operation end to end**: a program is compiled, versioned, stored, indexed, replicated by a crashing Raft cluster, sent over a network that drops, duplicates and corrupts packets, verified, and run under least privilege on the other side. Same answer, every hop checked, every disaster replayable from a seed.
 
 Everything here is written from scratch in Rust: no SQL engine, Raft library, TCP stack, VM, compiler framework or version-control library was imported (ghola even implements SHA-256 itself and checks it against a reference crate in tests). External crates are limited to serialization, CLI parsing, checksums and test tooling. Every claim is backed by a test, and every weakness by a measured number.
@@ -73,6 +75,8 @@ Timing on the development machine: the integration build takes about 20 s with c
 ./arrakis.sh tour                   # component demos: machine, kernel, wire, colony
 ./arrakis.sh test                   # the integration test suite (./arrakis.sh test all: every workspace)
 ```
+
+In a terminal the output is coloured, with box-drawing rules ([the look](docs/design/DIRECTIONS.md)). Redirected to a file or a pipe it is plain ASCII, so logs stay readable in Windows PowerShell too. `--color never|always|auto` and `NO_COLOR` override this. `-q` prints only what the program itself prints.
 
 ---
 

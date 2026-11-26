@@ -19,6 +19,7 @@
 
 mod pipeline;
 pub mod report;
+pub mod style;
 pub mod tools;
 mod trace;
 
