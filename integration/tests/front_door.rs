@@ -109,3 +109,49 @@ fn the_sandbox_stops_a_program_that_never_ends() {
     let o = tools::open(&file, tools::SANDBOX_MEMORY, 10_000).unwrap();
     assert!(o.exit.is_err(), "an infinite loop must hit the step budget");
 }
+
+/// `--json` is for scripts: one parseable object on stdout on success; on
+/// failure nothing on stdout, a text error on stderr and exit code 1.
+#[test]
+fn json_output_is_parseable_and_failures_stay_failures() {
+    use std::process::Command;
+    let bin = env!("CARGO_BIN_EXE_arrakis");
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+    let dir = tempfile::tempdir().unwrap();
+    let pdf = dir.path().join("fib.pdf");
+    let bad = dir.path().join("bad.pdf");
+    let fib = root.join("examples").join("fib.ck");
+    let call =
+        |args: &[&std::ffi::OsStr]| Command::new(bin).arg("--json").args(args).output().unwrap();
+
+    let out = call(&["run".as_ref(), fib.as_os_str()]);
+    assert!(out.status.success());
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(v["main"], v["expect"]);
+    assert!(v["main"].is_i64());
+
+    let out = call(&[
+        "pack".as_ref(),
+        fib.as_os_str(),
+        "-o".as_ref(),
+        pdf.as_os_str(),
+    ]);
+    assert!(out.status.success());
+    let packed: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    let out = call(&["open".as_ref(), pdf.as_os_str()]);
+    let opened: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(opened["payload_sha256"], packed["payload_sha256"]);
+    assert_eq!(opened["returned"], v["main"]);
+
+    let out = call(&[
+        "tamper".as_ref(),
+        pdf.as_os_str(),
+        "-o".as_ref(),
+        bad.as_os_str(),
+    ]);
+    assert!(out.status.success());
+    let out = call(&["open".as_ref(), bad.as_os_str()]);
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("refused"));
+}

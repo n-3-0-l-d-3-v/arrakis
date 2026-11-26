@@ -14,6 +14,8 @@
 //! not paint it as a red NativeCommandError when redirected); only real errors
 //! go to stderr, and they always come with a non-zero exit code. `-q/--quiet`
 //! drops the status lines of `run` and `open`, leaving just the program's output.
+//! `--json` makes `run`, `pack`, `inspect` and `open` print one JSON object on
+//! stdout instead (failures stay a text `error:` line on stderr, exit code 1).
 //!
 //! Look (docs/design, direction A): colour only when stdout is a terminal and
 //! `NO_COLOR` is unset (or `--color always`); box-drawing characters only on a
@@ -37,6 +39,17 @@ use clap::{Args, Parser, Subcommand, ValueEnum};
 /// Set once from `--quiet`; read by `status!`.
 static QUIET: AtomicBool = AtomicBool::new(false);
 
+/// Set once from `--json`.
+static JSON: AtomicBool = AtomicBool::new(false);
+
+fn json() -> bool {
+    JSON.load(Ordering::Relaxed)
+}
+
+fn emit(v: serde_json::Value) {
+    println!("{}", serde_json::to_string_pretty(&v).unwrap_or_default());
+}
+
 /// Set once from `--color` and the terminal; read through `style()`.
 static FANCY_COLOR: AtomicBool = AtomicBool::new(false);
 static FANCY_UNICODE: AtomicBool = AtomicBool::new(false);
@@ -58,7 +71,7 @@ enum ColorWhen {
 /// An informational line (timing, verification summary): stdout, unless `--quiet`.
 macro_rules! status {
     ($($t:tt)*) => {
-        if !QUIET.load(Ordering::Relaxed) {
+        if !QUIET.load(Ordering::Relaxed) && !JSON.load(Ordering::Relaxed) {
             println!($($t)*);
         }
     };
@@ -79,6 +92,9 @@ struct Cli {
     /// Colour and box-drawing characters: auto = only on a terminal without NO_COLOR.
     #[arg(long, global = true, value_enum, default_value_t = ColorWhen::Auto)]
     color: ColorWhen,
+    /// run, pack, inspect, open: print one JSON object instead of text (for scripts).
+    #[arg(long, global = true)]
+    json: bool,
     #[command(subcommand)]
     command: Command,
 }
@@ -165,6 +181,7 @@ type Res = Result<(), String>;
 fn main() -> ExitCode {
     let cli = Cli::parse();
     QUIET.store(cli.quiet, Ordering::Relaxed);
+    JSON.store(cli.json, Ordering::Relaxed);
     let choice = match cli.color {
         ColorWhen::Auto => anstream::ColorChoice::Auto,
         ColorWhen::Always => anstream::ColorChoice::Always,
@@ -270,14 +287,8 @@ fn demo(h: &Hostility, loss: f64, chaos: bool) -> Res {
     })?;
     let elapsed = started.elapsed();
     print!("{}", report::stages(&outcome, style()));
-    let mut replay = format!(
-        "arrakis {} --seed {}",
-        if chaos { "chaos" } else { "demo" },
-        h.seed
-    );
-    if let Some(p) = &h.program {
-        replay.push_str(&format!(" --program {}", p.display()));
-    }
+    let program = h.program.as_ref().map(|p| p.display().to_string());
+    let mut replay = report::replay_command(h.seed, loss, chaos, program.as_deref());
     replay.push_str("   reproduces this run exactly");
     print!(
         "{}",
@@ -446,10 +457,32 @@ fn run(file: &Path) -> Res {
     let started = Instant::now();
     let exit = machine.run();
     let elapsed = started.elapsed();
+    let steps = machine.trace.steps.len();
+    let ret = machine.regs.get(codegen::regalloc::RET_REG) as i64;
+    if json() {
+        let e = exit.map_err(|t| format!("trapped after {steps} steps: {t}"))?;
+        let expect = tools::expected_value(&src);
+        emit(serde_json::json!({
+            "file": file.display().to_string(),
+            "kind": if kind == SourceKind::Chakobsa { "chakobsa" } else { "assembly" },
+            "output": machine.output,
+            "main": if kind == SourceKind::Chakobsa { Some(ret) } else { None },
+            "expect": expect,
+            "exit": format!("{e:?}"),
+            "steps": steps,
+            "bytecode_bytes": payload.len(),
+            "elapsed_ms": elapsed.as_secs_f64() * 1e3,
+        }));
+        return match expect {
+            Some(v) if v != ret => Err(format!(
+                "the program says `// expect: {v}` but returned {ret}"
+            )),
+            _ => Ok(()),
+        };
+    }
     for line in &machine.output {
         println!("{line}");
     }
-    let steps = machine.trace.steps.len();
     match exit {
         Ok(e) => {
             if kind == SourceKind::Chakobsa {
@@ -484,6 +517,18 @@ fn pack(file: &Path, output: &Path, title: &str) -> Res {
     let payload = tools::payload_of(&program).map_err(|e| e.0)?;
     let bytes = artifact::embed(format, &program, title).map_err(|e| e.to_string())?;
     fs::write(output, &bytes).map_err(|e| format!("cannot write {}: {e}", output.display()))?;
+    if json() {
+        emit(serde_json::json!({
+            "file": output.display().to_string(),
+            "format": tools::format_name(format),
+            "bytes": bytes.len(),
+            "title": title,
+            "payload_bytes": payload.len(),
+            "payload_sha256": artifact::sha256_hex(&payload),
+            "blocks": program.blocks.len(),
+        }));
+        return Ok(());
+    }
     println!(
         "wrote {} ({} bytes): an ordinary one-page {} titled {title:?}",
         output.display(),
@@ -514,6 +559,22 @@ fn inspect(file: &Path, full: bool) -> Res {
     })?;
     let payload = tools::payload_of(&program).map_err(|e| e.0)?;
     let instrs: usize = program.blocks.iter().map(|b| b.instructions.len()).sum();
+    if json() {
+        emit(serde_json::json!({
+            "file": file.display().to_string(),
+            "format": tools::format_name(format),
+            "bytes": bytes.len(),
+            "payload_bytes": payload.len(),
+            "payload_sha256": artifact::sha256_hex(&payload),
+            "verified": true,
+            "blocks": program.blocks.len(),
+            "instructions": instrs,
+            "entry": program.entry,
+            "entry_label": program.blocks[program.entry].label,
+            "disassembly": if full { Some(isa::disasm::disassemble(&program)) } else { None },
+        }));
+        return Ok(());
+    }
     println!(
         "{} ({} bytes, {})",
         file.display(),
@@ -563,6 +624,27 @@ fn open(file: &Path, mem: usize, steps: u64) -> Res {
         mem / 1024,
         steps
     );
+    if json() {
+        let e = o.exit.as_ref().map_err(|t| {
+            format!(
+                "the sandbox stopped the program after {} steps: {t}",
+                o.steps
+            )
+        })?;
+        emit(serde_json::json!({
+            "file": file.display().to_string(),
+            "format": tools::format_name(o.format),
+            "payload_bytes": o.payload_bytes,
+            "payload_sha256": o.payload_sha,
+            "verified": true,
+            "output": o.output,
+            "returned": o.ret,
+            "exit": format!("{e:?}"),
+            "steps": o.steps,
+            "sandbox": { "memory_bytes": mem, "step_budget": steps },
+        }));
+        return Ok(());
+    }
     for line in &o.output {
         println!("{line}");
     }

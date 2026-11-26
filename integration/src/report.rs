@@ -11,6 +11,26 @@ use std::time::Duration;
 use crate::pipeline::{Outcome, Scenario};
 use crate::style::{Role, Style};
 
+/// The `arrakis` command line that reproduces a run exactly. Uses the short
+/// forms (`demo`, `chaos`) only when their defaults match: `chaos` means 15%
+/// loss, `demo` 0%; anything else spells out `--loss` and `--chaos`.
+pub fn replay_command(seed: u64, loss: f64, chaos: bool, program: Option<&str>) -> String {
+    let mut c = if chaos && loss == 0.15 {
+        format!("arrakis chaos --seed {seed}")
+    } else if !chaos && loss == 0.0 {
+        format!("arrakis demo --seed {seed}")
+    } else {
+        format!(
+            "arrakis demo --seed {seed} --loss {loss}{}",
+            if chaos { " --chaos" } else { "" }
+        )
+    };
+    if let Some(p) = program {
+        c.push_str(&format!(" --program {p}"));
+    }
+    c
+}
+
 /// Header printed before the run starts.
 pub fn header(s: &Scenario, program: &str, st: Style) -> String {
     let rule = st.rule();
@@ -193,4 +213,32 @@ pub fn summary(
     let _ = writeln!(o, "  {}{replay}", l("replay     "));
     let _ = writeln!(o, "{rule}");
     o
+}
+
+#[cfg(test)]
+mod tests {
+    use super::replay_command;
+
+    /// Audit finding (Phase 7): `demo --chaos` used to print `arrakis chaos`
+    /// (15% loss) as its replay, and `chaos --loss 0.3` dropped the loss.
+    #[test]
+    fn the_replay_line_names_every_parameter_that_differs_from_its_shortcut() {
+        assert_eq!(replay_command(7, 0.0, false, None), "arrakis demo --seed 7");
+        assert_eq!(
+            replay_command(7, 0.15, true, None),
+            "arrakis chaos --seed 7"
+        );
+        assert_eq!(
+            replay_command(11, 0.0, true, Some("x.ck")),
+            "arrakis demo --seed 11 --loss 0 --chaos --program x.ck"
+        );
+        assert_eq!(
+            replay_command(11, 0.3, true, None),
+            "arrakis demo --seed 11 --loss 0.3 --chaos"
+        );
+        assert_eq!(
+            replay_command(2, 0.2, false, None),
+            "arrakis demo --seed 2 --loss 0.2"
+        );
+    }
 }

@@ -6,7 +6,10 @@
 #   .\arrakis.ps1 kernel          muaddib: capabilities and logical clocks, no paths, no wall clock
 #   .\arrakis.ps1 wire            distrans: reliable RPC over a channel that loses and corrupts packets
 #   .\arrakis.ps1 colony          landsraad: Raft under continuous crashes, partitions and corruption
-#   .\arrakis.ps1 tour            all four component demos
+#   .\arrakis.ps1 vault           sietch: a key-value store that never overwrites a byte
+#   .\arrakis.ps1 database        choam: SQL whose only storage is that append-only log
+#   .\arrakis.ps1 history         ghola: version control pushed over a lossy network
+#   .\arrakis.ps1 tour            all seven component demos
 #   .\arrakis.ps1 test [all]      integration tests (or every workspace's full suite)
 #   .\arrakis.ps1 <anything else> passed to the arrakis CLI: demo, chaos, sabotage, examples,
 #                                 run, pack, inspect, open, tamper  (.\arrakis.ps1 --help)
@@ -110,6 +113,65 @@ function Colony {
     Tool landsraad landsraad-chaos --runs 20 --churn; if ($LASTEXITCODE) { Die 'a consensus invariant was violated' }
 }
 
+function Fresh([string]$name) {
+    $d = Join-Path $Out $name
+    Remove-Item -Recurse -Force $d -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force $d | Out-Null
+    $d
+}
+
+function Vault {
+    $V = Fresh 'vault'
+    Say 'sietch: a key-value store whose log only ever grows'
+    $size = { (Get-ChildItem $V -File | Measure-Object Length -Sum).Sum }
+    Cmd 'vaultc --dir out\vault put spice:arrakeen 40'
+    Tool sietch vaultc --dir $V put spice:arrakeen 40; if ($LASTEXITCODE) { Die 'put failed' }
+    Write-Host "   log size: $(& $size) bytes"
+    Cmd 'vaultc --dir out\vault put spice:arrakeen 41      # "overwrite"'
+    Tool sietch vaultc --dir $V put spice:arrakeen 41; if ($LASTEXITCODE) { Die 'put failed' }
+    Write-Host "   log size: $(& $size) bytes  (the old value is still on disk; a new record was appended)"
+    Cmd 'vaultc --dir out\vault put spice:tabr 75;  vaultc --dir out\vault scan spice:'
+    Tool sietch vaultc --dir $V put spice:tabr 75 | Out-Null
+    Tool sietch vaultc --dir $V scan spice:; if ($LASTEXITCODE) { Die 'scan failed' }
+    Cmd 'vaultc --dir out\vault status      # did reopening need to repair a torn write?'
+    Tool sietch vaultc --dir $V status; if ($LASTEXITCODE) { Die 'status failed' }
+}
+
+function Database {
+    $D = Fresh 'db'
+    Say 'choam: SQL whose only storage engine is sietch'
+    $sql = "CREATE TABLE harvest (id INTEGER PRIMARY KEY, sector TEXT, tons INTEGER); INSERT INTO harvest VALUES (1, 'arrakeen', 40), (2, 'sietch-tabr', 75); SELECT sector, tons FROM harvest WHERE tons > 50;"
+    Cmd "choamc --dir out\db -c `"$sql`""
+    Tool choam choamc --dir $D -c $sql; if ($LASTEXITCODE) { Die 'SQL failed' }
+    Cmd 'choamc --dir out\db -c "SELECT * FROM harvest;"      # a new process: the data survived'
+    Tool choam choamc --dir $D -c 'SELECT * FROM harvest;'; if ($LASTEXITCODE) { Die 'reopen failed' }
+}
+
+function GholaHistory {   # not `History`: that name is an alias of Get-History
+    $A = Fresh 'history-a'; $B = Fresh 'history-b'
+    Say 'ghola: content-addressed version control, pushed over a network that loses packets'
+    Push-Location $A
+    Cmd 'cd out\history-a; ghola init; (write poem.txt); ghola commit -m first'
+    Tool ghola ghola init | Out-Null
+    Set-Content -Path poem.txt -Value 'the spice must flow' -Encoding ascii
+    Tool ghola ghola commit -m first; if ($LASTEXITCODE) { Pop-Location; Die 'commit failed' }
+    Add-Content -Path poem.txt -Value 'the worm is the spice' -Encoding ascii
+    Cmd 'ghola diff'
+    Tool ghola ghola diff
+    Tool ghola ghola commit -m second | Out-Null
+    Pop-Location; Push-Location $B; Tool ghola ghola init | Out-Null; Pop-Location; Push-Location $A
+    Cmd 'ghola push ..\history-b main --loss 0.2 --seed 3      # 20% of datagrams dropped, duplicated or corrupted'
+    Tool ghola ghola push $B main --loss 0.2 --seed 3; $code = $LASTEXITCODE
+    Pop-Location
+    if ($code) { Die 'push failed' }
+    Push-Location $B
+    Cmd 'cd out\history-b; ghola log --oneline'
+    Tool ghola ghola log --oneline; $code = $LASTEXITCODE
+    Pop-Location
+    if ($code) { Die 'the pushed history is not readable' }
+    Ok '   the same commit ids as in history-a: an id is the hash of its content'
+}
+
 function Quickstart {
     Build
     Say '1/5  the whole stack, clean'; Cmd 'arrakis demo'; Arrakis demo; if ($LASTEXITCODE) { Die 'demo failed' }
@@ -129,7 +191,10 @@ switch ($Command) {
     'kernel' { Kernel }
     'wire' { Wire }
     'colony' { Colony }
-    'tour' { Machine; Kernel; Wire; Colony }
+    'vault' { Vault }
+    'database' { Database }
+    'history' { GholaHistory }
+    'tour' { Machine; Kernel; Wire; Colony; Vault; Database; GholaHistory }
     'test' {
         if ($Rest -contains 'all') {
             foreach ($r in 'mentat', 'sietch', 'chakobsa', 'muaddib', 'distrans', 'choam', 'landsraad', 'ghola', 'shai-hulud', 'integration') {
@@ -143,7 +208,7 @@ switch ($Command) {
             cargo test --release --manifest-path (Join-Path $Root 'integration\Cargo.toml'); if ($LASTEXITCODE) { Die 'integration tests failed' }
         }
     }
-    { $_ -in 'help', '-h' } { Get-Content $PSCommandPath -TotalCount 12 | Select-Object -Skip 1 | ForEach-Object { $_ -replace '^# ?', '' } }
+    { $_ -in 'help', '-h' } { Get-Content $PSCommandPath -TotalCount 15 | Select-Object -Skip 1 | ForEach-Object { $_ -replace '^# ?', '' } }
     default { Arrakis $Command @Rest; exit $LASTEXITCODE }
 }
 exit 0   # every failure above has already exited 1 through Die

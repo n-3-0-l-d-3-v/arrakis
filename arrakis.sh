@@ -7,7 +7,10 @@
 #   ./arrakis.sh kernel          muaddib: capabilities and logical clocks, no paths, no wall clock
 #   ./arrakis.sh wire            distrans: reliable RPC over a channel that loses and corrupts packets
 #   ./arrakis.sh colony          landsraad: Raft under continuous crashes, partitions and corruption
-#   ./arrakis.sh tour            all four component demos
+#   ./arrakis.sh vault           sietch: a key-value store that never overwrites a byte
+#   ./arrakis.sh database        choam: SQL whose only storage is that append-only log
+#   ./arrakis.sh history         ghola: version control pushed over a lossy network
+#   ./arrakis.sh tour            all seven component demos
 #   ./arrakis.sh test [all]      integration tests (or every workspace's full suite)
 #   ./arrakis.sh <anything else> passed to the arrakis CLI: demo, chaos, sabotage, examples,
 #                                run, pack, inspect, open, tamper  (./arrakis.sh --help)
@@ -95,6 +98,52 @@ wire() {
   tool distrans distrans-chaos --profile near_partition --runs 3 || die "wire chaos failed"
 }
 
+fresh() { rm -rf "$OUT/$1"; mkdir -p "$OUT/$1"; echo "$OUT/$1"; }
+logsize() { cat "$1"/* | wc -c | tr -d ' '; }
+
+vault() {
+  local V; V=$(fresh vault)
+  say "sietch: a key-value store whose log only ever grows"
+  cmd "vaultc --dir out/vault put spice:arrakeen 40"
+  tool sietch vaultc --dir "$V" put spice:arrakeen 40 || die "put failed"
+  echo "   log size: $(logsize "$V") bytes"
+  cmd "vaultc --dir out/vault put spice:arrakeen 41      # \"overwrite\""
+  tool sietch vaultc --dir "$V" put spice:arrakeen 41 || die "put failed"
+  echo "   log size: $(logsize "$V") bytes  (the old value is still on disk; a new record was appended)"
+  cmd "vaultc --dir out/vault put spice:tabr 75 && vaultc --dir out/vault scan spice:"
+  tool sietch vaultc --dir "$V" put spice:tabr 75 >/dev/null
+  tool sietch vaultc --dir "$V" scan spice: || die "scan failed"
+  cmd "vaultc --dir out/vault status      # did reopening need to repair a torn write?"
+  tool sietch vaultc --dir "$V" status || die "status failed"
+}
+
+database() {
+  local D; D=$(fresh db)
+  say "choam: SQL whose only storage engine is sietch"
+  local sql="CREATE TABLE harvest (id INTEGER PRIMARY KEY, sector TEXT, tons INTEGER); INSERT INTO harvest VALUES (1, 'arrakeen', 40), (2, 'sietch-tabr', 75); SELECT sector, tons FROM harvest WHERE tons > 50;"
+  cmd "choamc --dir out/db -c \"$sql\""
+  tool choam choamc --dir "$D" -c "$sql" || die "SQL failed"
+  cmd "choamc --dir out/db -c \"SELECT * FROM harvest;\"      # a new process: the data survived"
+  tool choam choamc --dir "$D" -c "SELECT * FROM harvest;" || die "reopen failed"
+}
+
+history_demo() {   # not `history`: that is a bash builtin
+  local A B; A=$(fresh history-a); B=$(fresh history-b)
+  say "ghola: content-addressed version control, pushed over a network that loses packets"
+  cmd "cd out/history-a && ghola init && (write poem.txt) && ghola commit -m first"
+  ( cd "$A" && tool ghola ghola init >/dev/null && echo "the spice must flow" > poem.txt \
+      && tool ghola ghola commit -m first ) || die "commit failed"
+  cmd "ghola diff"
+  ( cd "$A" && echo "the worm is the spice" >> poem.txt && tool ghola ghola diff \
+      && tool ghola ghola commit -m second >/dev/null ) || die "commit failed"
+  ( cd "$B" && tool ghola ghola init >/dev/null ) || die "init failed"
+  cmd "ghola push ../history-b main --loss 0.2 --seed 3      # 20% of datagrams dropped, duplicated or corrupted"
+  ( cd "$A" && tool ghola ghola push "$B" main --loss 0.2 --seed 3 ) || die "push failed"
+  cmd "cd out/history-b && ghola log --oneline"
+  ( cd "$B" && tool ghola ghola log --oneline ) || die "the pushed history is not readable"
+  ok "   the same commit ids as in history-a: an id is the hash of its content"
+}
+
 colony() {
   say "landsraad: Raft consensus while nodes crash and the network partitions"
   cmd "landsraad-chaos --runs 20 --churn"
@@ -119,7 +168,10 @@ case "${1:-quickstart}" in
   kernel)     kernel ;;
   wire)       wire ;;
   colony)     colony ;;
-  tour)       machine; kernel; wire; colony ;;
+  vault)      vault ;;
+  database)   database ;;
+  history)    history_demo ;;
+  tour)       machine; kernel; wire; colony; vault; database; history_demo ;;
   test)
     if [ "${2:-}" = "all" ]; then
       for r in mentat sietch chakobsa muaddib distrans choam landsraad ghola shai-hulud integration; do
@@ -128,6 +180,6 @@ case "${1:-quickstart}" in
     else
       cargo test --release --manifest-path "$ROOT/integration/Cargo.toml" || die "integration tests failed"
     fi ;;
-  help|-h) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//' ;;
+  help|-h) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//' ;;
   *) arrakis "$@" ;;
 esac

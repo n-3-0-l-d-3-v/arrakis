@@ -72,7 +72,7 @@ Timing on the development machine: the integration build takes about 20 s with c
 ./arrakis.sh chaos --loss 0.3       # nastier network
 ./arrakis.sh demo --program examples/bank.ck --chaos
 ./arrakis.sh run examples/primes.ck # compile + run one program on the dataflow machine
-./arrakis.sh tour                   # component demos: machine, kernel, wire, colony
+./arrakis.sh tour                   # component demos: machine, kernel, wire, colony, vault, database, history
 ./arrakis.sh test                   # the integration test suite (./arrakis.sh test all: every workspace)
 ```
 
@@ -132,7 +132,7 @@ The proof that this is not decorative: [`integration/tests`](integration/tests) 
 ./arrakis.sh open out/bad.pdf                          # error: payload integrity check failed -- refused, nothing was run
 ```
 
-Open `out/fib.pdf` in a PDF viewer (checked with Chrome's built-in viewer): it is a normal one-page document. The program is a standard PDF embedded-file attachment (in an SVG, base64 in `<metadata>`) and **no viewer executes it**. Only this loader, invoked on purpose, extracts it, and it fails closed: exactly one payload, a size cap, SHA-256 verified, the program validated, then run in a VM with no host I/O, a memory cap and a step budget. A property test proves any single-byte corruption yields an error or the identical program, never a different one. `./arrakis.sh artifact` runs this whole sequence. Design: [shai-hulud ADR-001](shai-hulud/docs/design/decisions/ADR-001-inert-container-and-strict-loader.md).
+Open `out/fib.pdf` in a PDF viewer: it is a normal one-page document. The page is an archive card that lists what it carries ([ADR-002](shai-hulud/docs/design/decisions/ADR-002-archive-page-and-hex-text.md); checked with MuPDF, and the earlier plain page with Chrome's viewer). The program is a standard PDF embedded-file attachment (in an SVG, base64 in `<metadata>`) and **no viewer executes it**. Only this loader, invoked on purpose, extracts it, and it fails closed: exactly one payload, a size cap, SHA-256 verified, the program validated, then run in a VM with no host I/O, a memory cap and a step budget. A property test proves any single-byte corruption yields an error or the identical program, never a different one. `./arrakis.sh artifact` runs this whole sequence. Design: [shai-hulud ADR-001](shai-hulud/docs/design/decisions/ADR-001-inert-container-and-strict-loader.md).
 
 ## The eight subsystems
 
@@ -190,7 +190,7 @@ Found while preparing this release, and fixed: a `while` loop whose condition us
 
 ### Next work
 
-1. **shai-hulud:** parse PDFs structurally (trailer → xref → objects) so files re-saved by other tools still load; sign payloads (Ed25519) for authorship; fix the title-containing-the-marker bug; show block names in disassembly.
+1. **shai-hulud:** parse PDFs structurally (trailer → xref → objects) so files re-saved by other tools still load; sign payloads (Ed25519) for authorship; show block names in disassembly. (A title containing the container's marker used to break the file; fixed in ADR-002.)
 2. **chakobsa:** materialize 64-bit constants; make register allocation sub-quadratic; add basic optimization passes; extend the differential generator to emit boolean loop conditions (the gap that hid ADR-007).
 3. **distrans:** an RPC retry deadline that scales with request size (it collapses under large requests today; ghola works around it), and congestion control that degrades gracefully at 20% loss.
 4. **landsraad:** targeted schedule search that finds the Figure 8 bug without a script.
@@ -201,6 +201,7 @@ Found while preparing this release, and fixed: a `while` loop whose condition us
 | If you want to… | Read |
 |---|---|
 | understand the whole thing | [docs/GUIDE.md](docs/GUIDE.md), the learning guide |
+| use it: write, run, send, script (`--json`), replay a run | [docs/WORKFLOWS.md](docs/WORKFLOWS.md) |
 | see each demo's real output, explained | [docs/DEMOS.md](docs/DEMOS.md) |
 | follow the operation layer by layer | [docs/INTEGRATION.md](docs/INTEGRATION.md) and [integration/src/pipeline.rs](integration/src/pipeline.rs) |
 | see how each constraint forced each design | [docs/CONSTRAINT_MATRIX.md](docs/CONSTRAINT_MATRIX.md) |
