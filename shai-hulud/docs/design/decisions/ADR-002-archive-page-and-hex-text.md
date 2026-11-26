@@ -44,9 +44,9 @@ Two hazards came with putting more text on the page:
    surface. The standard fonts are enough.
 
 ## Consequences
-- A packed PDF grows from about 5.5 KB to about 10 KB (the content stream).
-  It is still one page and one attachment, and MuPDF opens it with no
-  warnings.
+- A packed PDF grows by about 8.8 KB, all of it the page's content stream.
+  For example, arrakis `examples/fib.ck` went from 5456 to 13271 bytes. It
+  is still one page and one attachment, and MuPDF opens it with no warnings.
 - Text in the content stream is not greppable. Tests decode it
   (`pdf_page_text` in `tests/containers.rs`).
 - Centring uses Times-Roman AFM widths, which are also used for Times-Italic.
