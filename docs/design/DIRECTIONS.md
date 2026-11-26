@@ -72,9 +72,16 @@ Approved: A + B overall, C for shai-hulud.
 - **B, in the README:** `banner.svg`, without the status strip, because a
   static image must not look like a live result.
 
-**Not yet:**
-- C (Phase 6).
-- The subsystem CLIs (`imc`, `vaultc` ...), which keep their own plain output.
+**Applied in Phase 6:**
+- **C, in shai-hulud** (`shai-hulud/crates/artifact`, ADR-002): every packed
+  PDF and SVG shows the archive card.
+  - The table shows only facts derived from the bytes, the seal is drawn from
+    the hash, and nothing claims to be verified.
+  - Page text is written as PDF hex strings, so a title can no longer break
+    the container.
+
+**Not yet:** the subsystem CLIs (`imc`, `vaultc` ...), which keep their own
+plain output.
 
 ## Recommendation
 
