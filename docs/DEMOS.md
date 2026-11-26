@@ -126,7 +126,7 @@ and the program returns -1 if money is ever created or destroyed.
 
 ```text
 $ arrakis pack examples/fib.ck -o out/fib.pdf
-wrote out/fib.pdf (5456 bytes): an ordinary one-page PDF titled "Impossible Computer artifact"
+wrote out/fib.pdf (13271 bytes): an ordinary one-page PDF titled "Impossible Computer artifact"
   hidden inside: 11 blocks of mentat bytecode, 4444 bytes, sha256 8f1d2ac10b8880b1..
 
 $ arrakis inspect out/fib.pdf
