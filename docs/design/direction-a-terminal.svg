@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="517" viewBox="0 0 760 517" font-family="Consolas, 'DejaVu Sans Mono', Menlo, monospace" font-size="13">
+<rect width="760" height="517" rx="8" fill="#0e0c08"/>
+<rect width="760" height="30" rx="8" fill="#1d1810"/><rect y="22" width="760" height="8" fill="#1d1810"/>
+<text x="380.0" y="20" fill="#8a7350" text-anchor="middle">PS&gt; arrakis demo   (mockup: real values, shortened lines)</text>
+<rect x="18" y="48" width="69.3" height="19" fill="#e8b45a"/>
+<text x="18.0" y="62" fill="#0e0c08" font-weight="bold" xml:space="preserve"> ARRAKIS </text>
+<text x="87.3" y="62" fill="#ffd58a" xml:space="preserve">  publish a program, then run it safely somewhere else</text>
+<text x="18.0" y="81" fill="#8a7350" xml:space="preserve">──────────────────────────────────────────────────────────────────────────────────────</text>
+<text x="18.0" y="100" fill="#8a7350" xml:space="preserve">  program  </text>
+<text x="102.7" y="100" fill="#e8b45a" xml:space="preserve">built-in demo: fact(6) + sum_to(10), recursion and a loop</text>
+<text x="18.0" y="119" fill="#8a7350" xml:space="preserve">  network  </text>
+<text x="102.7" y="119" fill="#e8b45a" xml:space="preserve">clean</text>
+<text x="141.2" y="119" fill="#8a7350" xml:space="preserve">          cluster  </text>
+<text x="287.5" y="119" fill="#e8b45a" xml:space="preserve">3 Raft nodes, no faults</text>
+<text x="18.0" y="138" fill="#8a7350" xml:space="preserve">  seed     </text>
+<text x="102.7" y="138" fill="#e8b45a" xml:space="preserve">7</text>
+<text x="110.4" y="138" fill="#8a7350" xml:space="preserve">              same seed, same run, byte for byte</text>
+<text x="18.0" y="176" fill="#ffd58a" xml:space="preserve">▌</text>
+<text x="25.7" y="176" fill="#ffd58a" font-weight="bold" xml:space="preserve">PUBLISH  </text>
+<text x="95.0" y="176" fill="#8a7350" xml:space="preserve">  the author compiles, runs, commits and registers it</text>
+<text x="18.0" y="195" fill="#8a7350" xml:space="preserve">  01 </text>
+<text x="56.5" y="195" fill="#ffd58a" xml:space="preserve">chakobsa </text>
+<text x="125.8" y="195" fill="#e8b45a" xml:space="preserve"> compiled 320 B of source to 5681 B of bytecode (SSA, no AST)</text>
+<text x="712.0" y="195" fill="#b8d27a" xml:space="preserve">ok</text>
+<text x="18.0" y="214" fill="#8a7350" xml:space="preserve">  02 </text>
+<text x="56.5" y="214" fill="#ffd58a" xml:space="preserve">mentat   </text>
+<text x="125.8" y="214" fill="#e8b45a" xml:space="preserve"> publisher ran the bytecode locally: main() = 775          </text>
+<text x="712.0" y="214" fill="#b8d27a" xml:space="preserve">ok</text>
+<text x="18.0" y="233" fill="#8a7350" xml:space="preserve">  03 </text>
+<text x="56.5" y="233" fill="#ffd58a" xml:space="preserve">ghola    </text>
+<text x="125.8" y="233" fill="#e8b45a" xml:space="preserve"> committed release v1 as ea8403fa9104 (7 objects)         </text>
+<text x="712.0" y="233" fill="#b8d27a" xml:space="preserve">ok</text>
+<text x="18.0" y="252" fill="#8a7350" xml:space="preserve">  04 </text>
+<text x="56.5" y="252" fill="#ffd58a" xml:space="preserve">sietch   </text>
+<text x="125.8" y="252" fill="#e8b45a" xml:space="preserve"> append-only checksummed log, 6841 B, no byte overwritten </text>
+<text x="712.0" y="252" fill="#b8d27a" xml:space="preserve">ok</text>
+<text x="18.0" y="271" fill="#8a7350" xml:space="preserve">  05 </text>
+<text x="56.5" y="271" fill="#ffd58a" xml:space="preserve">choam    </text>
+<text x="125.8" y="271" fill="#e8b45a" xml:space="preserve"> indexed in SQL and read back: v1 -&gt; ea8403fa9104..       </text>
+<text x="712.0" y="271" fill="#b8d27a" xml:space="preserve">ok</text>
+<text x="18.0" y="309" fill="#ffd58a" xml:space="preserve">▌</text>
+<text x="25.7" y="309" fill="#ffd58a" font-weight="bold" xml:space="preserve">REPLICATE</text>
+<text x="95.0" y="309" fill="#8a7350" xml:space="preserve">  it crosses a hostile network and a crashing cluster</text>
+<text x="18.0" y="328" fill="#8a7350" xml:space="preserve">  06 </text>
+<text x="56.5" y="328" fill="#ffd58a" xml:space="preserve">distrans </text>
+<text x="125.8" y="328" fill="#e8b45a" xml:space="preserve"> pushed: 45 datagrams, 0 dropped, 0 duplicated, 0 corrupted</text>
+<text x="712.0" y="328" fill="#b8d27a" xml:space="preserve">ok</text>
+<text x="18.0" y="347" fill="#8a7350" xml:space="preserve">  07 </text>
+<text x="56.5" y="347" fill="#ffd58a" xml:space="preserve">landsraad</text>
+<text x="125.8" y="347" fill="#e8b45a" xml:space="preserve"> 3 nodes agreed on release/latest after 241 ticks         </text>
+<text x="712.0" y="347" fill="#b8d27a" xml:space="preserve">ok</text>
+<text x="18.0" y="366" fill="#8a7350" xml:space="preserve">  ...</text>
+<text x="56.5" y="366" fill="#8a7350" xml:space="preserve">  steps 08-12 (consume, verify, least privilege, run, revoke)</text>
+<text x="18.0" y="385" fill="#8a7350" xml:space="preserve">──────────────────────────────────────────────────────────────────────────────────────</text>
+<text x="18.0" y="404" fill="#b8d27a" font-weight="bold" xml:space="preserve">  VERIFIED </text>
+<text x="102.7" y="404" fill="#ffd58a" xml:space="preserve"> main() = 775 on the publisher AND on the consumer</text>
+<text x="18.0" y="423" fill="#8a7350" xml:space="preserve">  replay   </text>
+<text x="102.7" y="423" fill="#e8b45a" xml:space="preserve"> arrakis demo --seed 7</text>
+<text x="272.1" y="423" fill="#8a7350" xml:space="preserve">   reproduces this run exactly</text>
+<text x="18.0" y="461" fill="#8a7350" xml:space="preserve">  $ arrakis sabotage</text>
+<text x="18.0" y="480" fill="#ff6b4a" font-weight="bold" xml:space="preserve">  REFUSED  </text>
+<text x="102.7" y="480" fill="#ff6b4a" xml:space="preserve"> the fetched artifact does not match what was published</text>
+</svg>
