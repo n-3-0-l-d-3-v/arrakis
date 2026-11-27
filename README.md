@@ -70,6 +70,7 @@ Timing on the development machine: the integration build takes about 20 s with c
 ```bash
 ./arrakis.sh chaos --seed 42        # a different disaster, still the same answer
 ./arrakis.sh chaos --loss 0.3       # nastier network
+./arrakis.sh chaos --seed 42 --html out/chaos.html   # keep the run as one self-contained page
 ./arrakis.sh demo --program examples/bank.ck --chaos
 ./arrakis.sh run examples/primes.ck # compile + run one program on the dataflow machine
 ./arrakis.sh tour                   # component demos: machine, kernel, wire, colony, vault, database, history

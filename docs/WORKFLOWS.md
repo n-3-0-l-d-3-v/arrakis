@@ -84,6 +84,18 @@ Every run ends with a `replay` line, for example
 output, line for line, apart from the wall-clock time. That is how to share
 or investigate a particular disaster.
 
+To keep or share a run as a page, add `--html`:
+
+```powershell
+.\arrakis.ps1 chaos --seed 42 --html out\chaos.html
+Invoke-Item out\chaos.html          # opens in your default browser
+```
+
+The page is one self-contained file: no scripts, no network requests, and
+light or dark following your system. It shows the 12 steps, every datagram
+count per network leg, the summary, the date and the replay command. It is a
+record of that run, not a live status.
+
 ## 5. Use the storage, database and history layers directly
 
 The tour shows each of them with real commands (`.\arrakis.ps1 vault`,

@@ -17,6 +17,7 @@
 //! Every hop is checked against the one before it (identical bytes, identical
 //! hashes, identical result), and the trace records what each layer did.
 
+pub mod html;
 mod pipeline;
 pub mod report;
 pub mod style;

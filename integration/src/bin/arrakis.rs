@@ -111,6 +111,9 @@ struct Hostility {
     /// A chakobsa program to publish instead of the built-in demo.
     #[arg(long, value_name = "FILE.ck")]
     program: Option<PathBuf>,
+    /// Also write the run as one self-contained HTML page (no scripts, no network).
+    #[arg(long, value_name = "FILE.html")]
+    html: Option<PathBuf>,
 }
 
 #[derive(Subcommand)]
@@ -288,12 +291,25 @@ fn demo(h: &Hostility, loss: f64, chaos: bool) -> Res {
     let elapsed = started.elapsed();
     print!("{}", report::stages(&outcome, style()));
     let program = h.program.as_ref().map(|p| p.display().to_string());
-    let mut replay = report::replay_command(h.seed, loss, chaos, program.as_deref());
+    let command = report::replay_command(h.seed, loss, chaos, program.as_deref());
+    let mut replay = command.clone();
     replay.push_str("   reproduces this run exactly");
     print!(
         "{}",
         report::summary(&s, &outcome, elapsed, &replay, style())
     );
+    if let Some(path) = &h.html {
+        let page = arrakis_integration::html::report(
+            &s,
+            &outcome,
+            &label,
+            elapsed,
+            &command,
+            &arrakis_integration::html::today_utc(),
+        );
+        fs::write(path, page).map_err(|e| format!("cannot write {}: {e}", path.display()))?;
+        println!("wrote {} (open it in any browser)", path.display());
+    }
     if let Some(v) = expect {
         if outcome.consumer_result != v {
             return Err(format!(

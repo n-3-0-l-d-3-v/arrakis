@@ -207,3 +207,34 @@ fn the_plain_report_is_ascii_and_the_fancy_one_says_the_same_thing() {
     let words = |t: &str| t.split_whitespace().collect::<Vec<_>>().join(" ");
     assert_eq!(words(&stripped), words(&plain));
 }
+
+/// The HTML report (`--html`) carries every number the text report shows,
+/// escapes text that came from outside, and has no scripts or external links.
+#[test]
+fn the_html_report_carries_the_same_facts_and_escapes_its_input() {
+    use arrakis_integration::style::Style;
+    use arrakis_integration::{html, report};
+    let dir = tempfile::tempdir().unwrap();
+    let mut s = Scenario::hostile(9, 0.2);
+    s.chaos = true;
+    let o = s.run(dir.path()).unwrap();
+    let d = std::time::Duration::from_millis(123);
+    let program = "<script>alert(1)</script> & 'x'.ck";
+    let replay = report::replay_command(9, 0.2, true, Some(program));
+    let page = html::report(&s, &o, program, d, &replay, "2026-11-27");
+    let plain = report::header(&s, "p", Style::PLAIN)
+        + &report::stages(&o, Style::PLAIN)
+        + &report::summary(&s, &o, d, "r", Style::PLAIN);
+    for token in plain.split_whitespace() {
+        let t = token.trim_matches(|c: char| !c.is_ascii_alphanumeric());
+        if t.chars().any(|c| c.is_ascii_digit()) {
+            assert!(page.contains(t), "the HTML report lacks {t:?}");
+        }
+    }
+    assert!(!page.contains("<script"), "unescaped input");
+    assert!(page.contains("&lt;script&gt;alert(1)&lt;/script&gt; &amp; &#39;x&#39;.ck"));
+    for forbidden in ["<script", "http://", "https://", "src=", "@import"] {
+        assert!(!page.contains(forbidden), "{forbidden}");
+    }
+    assert!(page.contains("2026-11-27") && page.contains("not a live status"));
+}
