@@ -29,15 +29,16 @@ Each subsystem's `docs/DEFINITION_OF_DONE.md` states it; summarized:
 | Distinctive parts front and center | met | the integration pipeline is the README's hero; shai-hulud has its own section and `./arrakis.sh artifact` |
 | Consistent CLIs, helpful errors, visible progress | met | one `arrakis` CLI with `--help` on every command; `landsraad-chaos` and `muaddib-pipeline` gained `--help` and print usage on every argument error; errors say what to do next |
 | Example programs that just work | met | five `.ck` programs in `examples/`, each with a documented `// expect:` answer checked by `arrakis examples` and by `integration/tests/front_door.rs` |
-| No-Rust path | written, not verified here | `Dockerfile` + `.dockerignore`; the Docker daemon was not running when this release was prepared, so the image has not been built yet |
+| No-Rust path | met | `Dockerfile` + `.dockerignore`; on 2026-11-26 (Docker Desktop 29.1.3) `docker build` succeeded and quickstart, `chaos --seed 42` and `sabotage` ran inside the container |
 | Documentation hierarchy | met | README → `docs/DEMOS.md` → `docs/GUIDE.md` → ADRs, with `docs/HISTORY.md` preserving the build log |
 | Limitations stated, turned into next work | met | README "What this is not" and "Next work" |
-| Everything still builds, tests pass, chaos is deterministic | met | integration: fmt, clippy `-D warnings`, 16 tests; chakobsa, landsraad and muaddib suites re-run after their changes; `arrakis chaos --seed 7` reproduces the same trace (also asserted by a test) |
+| Everything still builds, tests pass, chaos is deterministic | met | integration: fmt, clippy `-D warnings`, 16 tests (24 as of 2026-11-27); chakobsa, landsraad and muaddib suites re-run after their changes; `arrakis chaos --seed 7` reproduces the same trace (also asserted by a test) |
 | No test, property check, chaos harness or ADR removed | met | only additions: chakobsa ADR-007 + regression test, `front_door.rs` (6 tests), tools unit tests |
 
 ## Known gaps in this checklist
 
-- The Dockerfile and the new GitHub Actions workflow were written but not yet
-  executed (no Docker daemon locally; CI runs on the first push).
+- Closed 2026-11-26/27: the Dockerfile has been built and run locally, and
+  the GitHub Actions workflow runs green on push (integration, plus the
+  quickstart on ubuntu-latest and windows-latest).
 - `tools::open` relies on shai-hulud's loader for the tamper refusal; that
   invariant is mutation-checked in shai-hulud's own suite, not again here.

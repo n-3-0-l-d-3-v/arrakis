@@ -15,4 +15,4 @@ Vertical slices, not horizontal layers built to 80% in parallel.
 - **Phase 10 — Full integration (DONE).** A single vertical operation (e.g. `xgit clone`) traced end-to-end through every layer.
 
 Each phase only starts once the previous phase's Definition of Done is met,
-or is explicitly descoped per [docs/FALLBACK.md](docs/FALLBACK.md).
+or is explicitly descoped per [docs/FALLBACK.md](FALLBACK.md).
