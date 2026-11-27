@@ -14,6 +14,9 @@ use proptest::prelude::*;
 use rpc::{RpcClient, RpcServer};
 use transport::{Config, Connection};
 
+/// How long the simulation may run before the test gives up on a call.
+const MAX_TICKS: u64 = 30_000;
+
 fn transport_config() -> Config {
     Config {
         segment_size: 64,
@@ -27,7 +30,7 @@ fn transport_config() -> Config {
 
 /// Drives an `RpcClient`/`RpcServer` pair over two hostile `Channel`s
 /// until every issued call has either completed or failed, or
-/// `max_ticks` elapses.
+/// `MAX_TICKS` elapses.
 struct Sim {
     client: RpcClient,
     server: RpcServer<'static>,
@@ -46,7 +49,14 @@ impl Sim {
     ) -> (Self, Vec<u8>) {
         let (client_conn, syn) = Connection::connect(transport_config(), Tick(0));
         let server_conn = Connection::listen(transport_config(), Tick(0));
-        let client = RpcClient::new(client_conn, retry_deadline, 50);
+        // The client may keep retrying for the whole simulation. A fixed
+        // count (it was 50) gave a call only 50 * retry_deadline ticks,
+        // as little as 150, while the connection underneath may back off
+        // its own retransmissions up to `max_rto` (300) under loss: a
+        // slow but correct call was then reported as failed. Liveness is
+        // still asserted, against MAX_TICKS, by the loop below.
+        let max_attempts = (MAX_TICKS / retry_deadline) as u32;
+        let client = RpcClient::new(client_conn, retry_deadline, max_attempts);
         // The handler's side effect (an incrementing counter, folded into
         // the response payload) is what makes a re-execution observably
         // different from a replayed cached response — the property below
@@ -131,7 +141,6 @@ proptest! {
         let mut to_issue: Vec<Vec<u8>> = payloads;
         let mut issued = false;
 
-        let max_ticks = 30_000u64;
         loop {
             sim.step();
             let now = Tick(sim.tick);
@@ -164,7 +173,7 @@ proptest! {
             prop_assert!(failed.is_empty(), "a call failed outright: {failed:?}");
 
             let all_done = issued && expected_responses.values().all(|v| v.is_some());
-            if all_done || sim.tick >= max_ticks {
+            if all_done || sim.tick >= MAX_TICKS {
                 prop_assert!(all_done, "not all calls completed within the tick budget");
                 break;
             }
