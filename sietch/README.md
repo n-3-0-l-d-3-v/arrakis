@@ -13,7 +13,7 @@ repo commit-for-commit.
 
 ## Status
 
-**Phase 2 — ACTIVE.** Tickets 001–005 are done: a checksummed, append-only,
+**Phase 2 — COMPLETE.** All 14 tickets are done (see [tickets/](tickets/)). Tickets 001–005 built the base: a checksummed, append-only,
 multi-segment log with crash recovery that survives corruption injected at
 *every* byte offset of a real file (`crates/storage/tests/crash_recovery.rs`);
 PUT/GET/DELETE/SCAN/SNAPSHOT primitives with genuine multi-version reads,
@@ -119,14 +119,18 @@ Versioning, MVCC, append-only logs, page/segment design, and a real compaction a
 
 ## Sibling repositories
 
-- [mentat](https://github.com/n-3-0-l-d-3-v/mentat) — THE MACHINE (COMPLETE)
-- [chakobsa](https://github.com/n-3-0-l-d-3-v/chakobsa) — THE LANGUAGE (QUEUED)
-- [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) — THE KERNEL (QUEUED)
-- [choam](https://github.com/n-3-0-l-d-3-v/choam) — THE DATABASE (QUEUED)
-- [distrans](https://github.com/n-3-0-l-d-3-v/distrans) — THE WIRE (QUEUED)
-- [landsraad](https://github.com/n-3-0-l-d-3-v/landsraad) — THE COLONY (QUEUED)
-- [ghola](https://github.com/n-3-0-l-d-3-v/ghola) — THE HISTORY (QUEUED)
-- [shai-hulud](https://github.com/n-3-0-l-d-3-v/shai-hulud) — THE ARTIFACT (STRETCH)
+All nine subsystems are complete and are mirrored, commit for commit, into
+[ARRAKIS](https://github.com/n-3-0-l-d-3-v/arrakis), where one operation runs
+through all of them.
+
+- [mentat](https://github.com/n-3-0-l-d-3-v/mentat) — THE MACHINE: no instruction pointer: dataflow execution
+- [chakobsa](https://github.com/n-3-0-l-d-3-v/chakobsa) — THE LANGUAGE: a compiler with no syntax tree
+- [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) — THE KERNEL: capabilities instead of paths, logical clocks instead of a wall clock
+- [distrans](https://github.com/n-3-0-l-d-3-v/distrans) — THE WIRE: reliable transport over a channel that lies
+- [choam](https://github.com/n-3-0-l-d-3-v/choam) — THE DATABASE: SQL on append-only storage
+- [landsraad](https://github.com/n-3-0-l-d-3-v/landsraad) — THE COLONY: consensus with no single machine and no global clock
+- [ghola](https://github.com/n-3-0-l-d-3-v/ghola) — THE HISTORY: content-addressed version history
+- [shai-hulud](https://github.com/n-3-0-l-d-3-v/shai-hulud) — THE ARTIFACT: a program carried inside a PDF or SVG
 
 ## Development
 
