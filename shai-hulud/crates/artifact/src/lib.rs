@@ -10,6 +10,7 @@
 
 pub mod page;
 pub mod pdf;
+pub mod pdfread;
 pub mod svg;
 
 use sha2::{Digest, Sha256};
@@ -31,6 +32,8 @@ pub enum Error {
     HashMismatch,
     #[error("invalid program: {0}")]
     Program(String),
+    #[error("unsupported PDF structure: {0}; was the file re-saved by another tool? Only single-revision PDFs with a classic xref table and an uncompressed attachment can be loaded (ADR-003)")]
+    Unsupported(String),
     #[error("unrecognised container format")]
     UnknownFormat,
 }
