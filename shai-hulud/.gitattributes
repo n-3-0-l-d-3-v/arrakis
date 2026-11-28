@@ -1,0 +1,3 @@
+# Test fixtures are byte-exact PDFs: their xref offsets break if line endings change.
+*.pdf binary
+*.svg -text
