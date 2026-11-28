@@ -1,0 +1,29 @@
+ARRAKIS: quick start for the prebuilt binary
+=============================================
+
+Run these from this folder (the one that holds the arrakis executable and
+examples/). On Windows use .\arrakis.exe instead of ./arrakis.
+
+  ./arrakis demo                    one program through all eight layers, twelve numbered steps
+  ./arrakis chaos                   the same over a hostile network and a crashing cluster
+  ./arrakis chaos --seed 42         a different disaster, still the same answer
+  ./arrakis sabotage                a flipped bit and a lying registry, both caught
+  ./arrakis examples                five programs, locally and after the hostile trip
+  ./arrakis run examples/fib.ck     compile and run one program
+  ./arrakis pack examples/fib.ck -o fib.pdf    hide the program in an ordinary PDF
+  ./arrakis inspect fib.pdf         verify it and show what is inside; nothing runs
+  ./arrakis open fib.pdf            verify it, then run it in the sandbox
+  ./arrakis chaos --html chaos.html keep a run as one self-contained page
+  ./arrakis --help                  everything else (--json, --color, -q)
+
+macOS: a downloaded binary is quarantined. If macOS refuses to open it, run
+  xattr -d com.apple.quarantine ./arrakis
+after checking the archive's SHA-256 (see INSTALL.md).
+
+The component tour (machine, kernel, wire, colony, vault, database, history)
+needs the source: clone https://github.com/n-3-0-l-d-3-v/arrakis and run
+./arrakis.sh tour (Windows: .\arrakis.ps1 tour).
+
+Experimental software: the networks and the cluster are simulations, the
+sandbox gives no host-level guarantee, and a verified PDF proves integrity,
+not authorship. See SECURITY.md and README.md.

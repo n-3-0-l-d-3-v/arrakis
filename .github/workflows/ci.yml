@@ -1,8 +1,9 @@
 name: CI
 
 # The subsystems run their own CI in their standalone repositories. This
-# workflow covers what only exists here: the integration crate, the `arrakis`
-# CLI, and the quickstart that a newcomer runs first.
+# workflow covers what only exists here: the root workspace (the integration
+# crate and the `arrakis` CLI, built with the committed Cargo.lock) and the
+# quickstart that a newcomer runs first, on every supported OS.
 
 on:
   push:
@@ -10,29 +11,41 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: never
+
 jobs:
   integration:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
         with:
-          components: clippy, rustfmt
+          persist-credentials: false
+      - name: Toolchain
+        run: rustup toolchain install stable --profile minimal -c rustfmt,clippy && rustup default stable
       - name: Format check
-        run: cargo fmt --manifest-path integration/Cargo.toml -- --check
+        run: cargo fmt --all -- --check
       - name: Clippy
-        run: cargo clippy --manifest-path integration/Cargo.toml --all-targets -- -D warnings
+        run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - name: Tests
-        run: cargo test --release --manifest-path integration/Cargo.toml
+        run: cargo test --release --locked --workspace
 
   quickstart:
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+        with:
+          persist-credentials: false
+      - name: Toolchain
+        shell: bash
+        run: rustup toolchain install stable --profile minimal && rustup default stable
       - name: Quickstart (bash)
         if: runner.os != 'Windows'
         run: ./arrakis.sh
