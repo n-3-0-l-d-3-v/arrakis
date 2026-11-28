@@ -276,10 +276,13 @@ hasn't been altered, and runs it inside mentat's sandbox.
 - **Sandboxing**: mentat has no I/O, a memory cap and a step budget.
 - **Property invariant**: any single-byte corruption yields an error or
   the identical payload, never a different program.
-- **Known weaknesses** (the next work): the PDF reader only understands its
-  own layout, so a re-saved PDF fails. A title containing the marker text
-  makes an unloadable file. The hash gives integrity, not authorship, so
-  signatures are needed.
+- **Known weaknesses** (see ROADMAP.md): the PDF reader walks the xref
+  table and handles a stated subset (one revision, classic xref, an
+  uncompressed attachment); a PDF re-saved with compression or as an
+  incremental update is refused as unsupported (shai-hulud ADR-003). The
+  title bug, where marker text in a title made an unloadable file, was
+  fixed in ADR-002. The hash gives integrity, not authorship, so signatures
+  are needed.
 
 ```
 ./arrakis.sh pack examples/fib_print.imcs -o out/fib.pdf

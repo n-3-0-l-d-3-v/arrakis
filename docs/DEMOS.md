@@ -5,6 +5,80 @@ form; on Windows use `.\arrakis.ps1` with the same arguments. The first run
 builds the code; after that each demo takes a fraction of a second to a few
 seconds.
 
+## The four demos at a glance
+
+Each demo removes an assumption, shows the mechanism that replaces it, and
+proves something specific, and something narrower than it might look.
+
+### A. The whole system: `arrakis demo` (section 1)
+
+- **Assumption removed:** that each layer of a computer can trust the one
+  below it. Here nothing is trusted: every layer checks its input.
+- **Mechanism:** twelve steps through all eight layers (compile without an
+  AST, run on a dataflow machine, commit to a content-addressed history,
+  store append-only, index in SQL, push, replicate, fetch, verify, run
+  under least privilege, revoke).
+- **Watch:** the layer name on each numbered step, the commit id and
+  artifact hash repeated across layers, and `main() = 775` on both sides.
+- **Proves:** the subsystems really compose: real calls, real bytes, one
+  answer, checked at each hop.
+- **Does not prove:** anything about real machines or networks; every
+  process here is in one OS process, in virtual time.
+
+### B. The hostile network: `arrakis chaos --seed 42` (section 2)
+
+- **Assumption removed:** a reliable network and a cluster that stays up.
+- **Mechanism:** distrans (CRC-32C framing, selective repeat, exactly-once
+  RPC) over a channel that drops, duplicates, reorders, corrupts and
+  truncates; landsraad (Raft) with nodes crashed, restarted and partitioned
+  while they agree.
+- **Watch:** the datagram counts (dropped, duplicated, corrupted), "each
+  executed exactly once", the crash and leader-term counts, then the same
+  `VERIFIED` line. Run the printed `replay` command and diff the output: it
+  is identical.
+- **Proves:** for this seed, the protocols mask these faults, and the run is
+  exactly reproducible, so a failure would be too.
+- **Does not prove:** correctness for every seed (chaos samples, it does not
+  enumerate; landsraad's random search misses one known Raft bug), or
+  behaviour on a real network with real timing.
+
+### C. Sabotage: `arrakis sabotage` and `arrakis tamper` (sections 3 and 5)
+
+- **Assumption removed:** that stored and transmitted data is what was
+  written.
+- **Mechanism:** content addressing (ghola re-hashes every object), a
+  three-way hash agreement (manifest = SQL registry = publisher), and
+  shai-hulud's strict loader (structure, size, SHA-256, program validation).
+- **Watch:** which check fires for which lie: the flipped bit on the server
+  is caught by hashing, the lying registry by the agreement check, the
+  tampered PDF by the payload hash. Nothing runs in any of them.
+- **Proves:** each check is load-bearing (the integration tests also show
+  that removing the registry check lets the sabotage through).
+- **Does not prove:** authorship. A hash detects change, not who made the
+  file; anyone can pack a new program with a matching hash. There are no
+  signatures yet ([ROADMAP](../ROADMAP.md)).
+
+### D. The individual systems: `./arrakis.sh tour` (section 6)
+
+Each subsystem's own tool, one assumption at a time: **machine** (mentat,
+no instruction pointer), **kernel** (muaddib, no paths, no wall clock),
+**wire** (distrans, a network that lies), **colony** (landsraad, Raft while
+nodes crash), **vault** (sietch, a log that only grows), **database**
+(choam, SQL with sietch as its only storage), **history** (ghola, commits
+pushed over a lossy link). `arrakis run FILE` (chakobsa + mentat) and
+`./arrakis.sh artifact` (shai-hulud) cover the last two.
+
+- **Watch:** the one line in each that shows the removed assumption at
+  work: the dataflow order, the denied capability, the retransmissions, the
+  agreed log, the log that grew on "overwrite", the data surviving a new
+  process, the identical commit ids on both sides of the push.
+- **Proves:** each subsystem works alone, before integration.
+- **Does not prove:** performance; see the measured costs in the README.
+
+A short recorded terminal session (for example with asciinema or VHS) of
+demos B and C would show the same thing to someone who has not installed
+anything; the text output and `--html` reports already carry every number.
+
 ## 1. `arrakis demo`: the whole stack, clean
 
 One program goes through all eight layers. The output is grouped into the
@@ -132,10 +206,11 @@ wrote out/fib.pdf (13271 bytes): an ordinary one-page PDF titled "Impossible Com
 $ arrakis inspect out/fib.pdf
   container   well-formed, exactly one embedded program
   integrity   sha256 8f1d2ac10b8880b13294ced79af56ab17b759bf8a7b68c232e84c366d2413316 verified
+  authorship  not checked: there is no signature, anyone can pack any program
   program     11 blocks, 75 instructions, entry b9 ("driver"); validated
 
 $ arrakis open out/fib.pdf
-verified PDF container: sha256 8f1d2ac10b8880b1.. (4444 bytes); running in the sandbox (no host I/O, 1024 KiB memory, 10000000 step budget)
+verified PDF container: sha256 8f1d2ac10b8880b1.. (4444 bytes; integrity only, authorship not checked); running in the sandbox (no host I/O, 1024 KiB memory, 10000000 step budget)
 returned 6765
 [Halted after 656722 steps]
 
@@ -149,12 +224,15 @@ error: out/fib-tampered.pdf: payload integrity check failed -- refused, nothing 
 Open either PDF in a viewer: both are the same harmless one-page document.
 The program is an embedded-file attachment that no viewer runs. Only
 `arrakis open` (or shai-hulud's own `artifact run`) extracts it, and only
-after checking structure, size and hash. A changed digit in the hidden JSON is
-enough to be refused.
+after walking the file's xref table and checking structure, size and hash
+([ADR-003](../shai-hulud/docs/design/decisions/ADR-003-structural-pdf-reading.md)).
+A changed digit in the hidden JSON is enough to be refused, and so is a PDF
+re-saved with compression or as an incremental update (as "unsupported",
+not as tampering).
 
 What this does **not** prove: who made the file. Anyone can pack a different
-program into a fresh PDF with a matching hash. Signing is the first item of
-Next work in the README.
+program into a fresh PDF with a matching hash. Signing is the first item
+under "Planned next" in [ROADMAP.md](../ROADMAP.md).
 
 ## 6. `./arrakis.sh tour`: the components on their own
 
@@ -224,3 +302,54 @@ Twenty seeded clusters, each crashed, restarted and partitioned constantly,
 checked every tick for election safety, log matching, leader completeness and
 state-machine safety. 754 crashes, 301 elections, no violations. Any seed
 with a violation would be printed so `--seed S --runs 1` replays it exactly.
+
+### vault (sietch): a log that only grows
+
+```text
+$ vaultc --dir out/vault put spice:arrakeen 40
+ok
+   log size: 37 bytes
+$ vaultc --dir out/vault put spice:arrakeen 41      # "overwrite"
+ok
+   log size: 74 bytes  (the old value is still on disk; a new record was appended)
+$ vaultc --dir out/vault put spice:tabr 75 && vaultc --dir out/vault scan spice:
+spice:arrakeen = 41
+spice:tabr = 75
+$ vaultc --dir out/vault status      # did reopening need to repair a torn write?
+recovered_from_torn_tail: false
+```
+
+An "overwrite" appends a new record and the file grows; reads see the newest
+version. Crash recovery truncates a torn tail; its tests corrupt every byte
+offset of a real file.
+
+### database (choam): SQL with the vault as its only storage
+
+```text
+$ choamc --dir out/db -c "CREATE TABLE harvest (id INTEGER PRIMARY KEY, sector TEXT, tons INTEGER); INSERT INTO harvest VALUES (1, 'arrakeen', 40), (2, 'sietch-tabr', 75); SELECT sector, tons FROM harvest WHERE tons > 50;"
+OK
+2 rows affected
+sector      | tons
+------------+-----
+sietch-tabr | 75
+(1 row)
+$ choamc --dir out/db -c "SELECT * FROM harvest;"      # a new process: the data survived
+id | sector      | tons
+---+-------------+-----
+1  | arrakeen    | 40
+2  | sietch-tabr | 75
+(2 rows)
+```
+
+### history (ghola): commits pushed over a lossy link
+
+```text
+$ ghola push ../history-b main --loss 0.2 --seed 3      # 20% of datagrams dropped, duplicated or corrupted
+Pushed main: 6 objects (313 bytes) in 104 ticks over 30 datagrams sent (4 dropped)
+$ cd out/history-b && ghola log --oneline
+31aa783 second
+e5d5083 first
+```
+
+The commit ids on the receiving side are the same as on the sending side,
+because an id is the hash of its content.
