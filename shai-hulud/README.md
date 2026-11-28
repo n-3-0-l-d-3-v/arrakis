@@ -13,11 +13,23 @@ repo commit-for-commit.
 
 ## Status
 
-**Phase 9 — STRETCH**
+**Phase 9 — COMPLETE (Level 1).** A program compiled for mentat is embedded
+in an ordinary PDF (as a standard file attachment) or SVG (in `<metadata>`),
+and run only by a strict loader that verifies its SHA-256 and runs it in
+mentat's sandbox. The page is an archive catalogue card
+([ADR-002](docs/design/decisions/ADR-002-archive-page-and-hex-text.md)).
+The PDF reader walks the file's own xref table and loads PDFs re-saved by
+other tools when they stay uncompressed and single-revision; anything else
+is refused by name
+([ADR-003](docs/design/decisions/ADR-003-structural-pdf-reading.md)).
+Executing inside a viewer was deliberately not built
+([ADR-001](docs/design/decisions/ADR-001-inert-container-and-strict-loader.md)).
 
-See [tickets/](tickets/) for the live phase-by-phase ticket board and
-[docs/design/](docs/design/) for constraints, invariants and architecture
-decision records.
+**Integrity, not authorship.** The hash proves the payload was not changed
+after packing; anyone can pack any program. There is no signature yet.
+
+See [tickets/](tickets/) for the ticket board and
+[docs/design/](docs/design/) for constraints, invariants and decisions.
 
 ## The constraint
 
@@ -33,14 +45,18 @@ Polyglot file construction, a tiny trusted loader, and running mentat's VM from 
 
 ## Sibling repositories
 
-- [mentat](https://github.com/n-3-0-l-d-3-v/mentat) — THE MACHINE (COMPLETE)
-- [chakobsa](https://github.com/n-3-0-l-d-3-v/chakobsa) — THE LANGUAGE (QUEUED)
-- [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) — THE KERNEL (QUEUED)
-- [sietch](https://github.com/n-3-0-l-d-3-v/sietch) — THE VAULT (ACTIVE)
-- [choam](https://github.com/n-3-0-l-d-3-v/choam) — THE DATABASE (QUEUED)
-- [distrans](https://github.com/n-3-0-l-d-3-v/distrans) — THE WIRE (QUEUED)
-- [landsraad](https://github.com/n-3-0-l-d-3-v/landsraad) — THE COLONY (QUEUED)
-- [ghola](https://github.com/n-3-0-l-d-3-v/ghola) — THE HISTORY (QUEUED)
+All nine subsystems are complete and are mirrored, commit for commit, into
+[ARRAKIS](https://github.com/n-3-0-l-d-3-v/arrakis), where one operation runs
+through all of them.
+
+- [mentat](https://github.com/n-3-0-l-d-3-v/mentat) — THE MACHINE: no instruction pointer: dataflow execution
+- [sietch](https://github.com/n-3-0-l-d-3-v/sietch) — THE VAULT: storage that never overwrites a byte
+- [chakobsa](https://github.com/n-3-0-l-d-3-v/chakobsa) — THE LANGUAGE: a compiler with no syntax tree
+- [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) — THE KERNEL: capabilities instead of paths, logical clocks instead of a wall clock
+- [distrans](https://github.com/n-3-0-l-d-3-v/distrans) — THE WIRE: reliable transport over a channel that lies
+- [choam](https://github.com/n-3-0-l-d-3-v/choam) — THE DATABASE: SQL on append-only storage
+- [landsraad](https://github.com/n-3-0-l-d-3-v/landsraad) — THE COLONY: consensus with no single machine and no global clock
+- [ghola](https://github.com/n-3-0-l-d-3-v/ghola) — THE HISTORY: content-addressed version history
 
 ## Development
 
