@@ -1,0 +1,35 @@
+name: Idea or feature request
+description: Propose a change. For open-ended design talk, Discussions -> Ideas and Design may fit better.
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ARRAKIS removes one assumption per subsystem on purpose. Ideas that keep that constraint are the most likely to land; ROADMAP.md lists what is already planned or deliberately out of scope.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: What were you trying to do or learn, and what got in the way? Describe the problem before the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you change?
+  - type: textarea
+    id: constraint
+    attributes:
+      label: Does it fit the subsystem's constraint?
+      description: For example, chakobsa has no AST and sietch never overwrites bytes. Say how the idea works within that, or why the constraint should bend.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: How would we know it works?
+      description: A test, an invariant, a benchmark, a demo.
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contribution
+      options:
+        - label: I would like to work on this myself.

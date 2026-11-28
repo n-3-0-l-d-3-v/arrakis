@@ -1,0 +1,77 @@
+name: Bug report
+description: Something in ARRAKIS does not do what its docs or tests say it does.
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please check the README's "Limits and non-goals" and ROADMAP.md first: simulated networks, the restricted PDF subset and unsigned containers are documented limits. Security problems go privately through SECURITY.md, not here.
+  - type: input
+    id: version
+    attributes:
+      label: ARRAKIS version or commit
+      description: "`arrakis --version`, or `git rev-parse --short HEAD` if built from source."
+      placeholder: "0.1.0 / 9ad943b"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How you installed it
+      options: ["Prebuilt release binary", "Built from source (cargo / arrakis.sh / arrakis.ps1)", "Docker"]
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: OS and architecture
+      placeholder: "Windows 11 x86_64 / Ubuntu 24.04 aarch64 / macOS 15 Apple Silicon"
+    validations:
+      required: true
+  - type: input
+    id: rust
+    attributes:
+      label: Rust version (if built from source)
+      description: "`rustc --version`"
+  - type: dropdown
+    id: subsystem
+    attributes:
+      label: Subsystem
+      options: ["integration / arrakis CLI", "mentat (machine)", "sietch (vault)", "chakobsa (language)", "muaddib (kernel)", "distrans (wire)", "choam (database)", "landsraad (colony)", "ghola (history)", "shai-hulud (artifact)", "scripts / Docker / docs", "not sure"]
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: The exact command
+      description: Copy it as you ran it, including flags and the seed.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Anything needed beyond the command (an input file, a .ck program, a data directory). Attach small files.
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result and logs
+      description: Full output. `--color never` keeps it readable.
+      render: text
+    validations:
+      required: true
+  - type: dropdown
+    id: determinism
+    attributes:
+      label: Deterministic or seed-dependent?
+      description: Every chaos run replays exactly from its seed. Does the same command fail every time? Does a different --seed change it?
+      options: ["Fails every time with the same command", "Fails only with some seeds (list them above)", "Intermittent even with the same seed (please say so: that is a bug in itself)", "Not seed-related / don't know"]
+    validations:
+      required: true

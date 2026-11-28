@@ -138,7 +138,7 @@ enum Command {
     },
     /// Run every examples/*.ck locally and through the hostile stack, checking `// expect:`.
     Examples {
-        /// Defaults to ./examples, or the repository's examples/ if there is none here.
+        /// Defaults to ./examples, then examples/ beside the executable, then the source tree's.
         #[arg(long)]
         dir: Option<PathBuf>,
         #[arg(long, default_value_t = 7)]
@@ -204,15 +204,21 @@ fn main() -> ExitCode {
         Command::Chaos { h } => demo(&h, h.loss.unwrap_or(0.15), true),
         Command::Sabotage { seed } => sabotage(seed),
         Command::Examples { dir, seed, loss } => {
+            // ./examples, then examples/ next to the executable (a release
+            // archive), then the source tree this binary was built from
             let dir = dir.unwrap_or_else(|| {
-                let here = PathBuf::from("examples");
-                if here.is_dir() {
-                    here
-                } else {
-                    Path::new(env!("CARGO_MANIFEST_DIR"))
-                        .join("..")
-                        .join("examples")
-                }
+                let beside_exe = std::env::current_exe()
+                    .ok()
+                    .and_then(|e| e.parent().map(|d| d.join("examples")));
+                [Some(PathBuf::from("examples")), beside_exe]
+                    .into_iter()
+                    .flatten()
+                    .find(|d| d.is_dir())
+                    .unwrap_or_else(|| {
+                        Path::new(env!("CARGO_MANIFEST_DIR"))
+                            .join("..")
+                            .join("examples")
+                    })
             });
             examples(&dir, seed, loss)
         }
@@ -382,7 +388,7 @@ fn examples(dir: &Path, seed: u64, loss: f64) -> Res {
     let mut files: Vec<PathBuf> = fs::read_dir(dir)
         .map_err(|e| {
             format!(
-                "cannot list {}: {e} (run from the repository root, or pass --dir)",
+                "cannot list {}: {e} (run from the repository root or the release folder, or pass --dir)",
                 dir.display()
             )
         })?
@@ -583,6 +589,7 @@ fn inspect(file: &Path, full: bool) -> Res {
             "payload_bytes": payload.len(),
             "payload_sha256": artifact::sha256_hex(&payload),
             "verified": true,
+            "authorship_checked": false,
             "blocks": program.blocks.len(),
             "instructions": instrs,
             "entry": program.entry,
@@ -602,6 +609,7 @@ fn inspect(file: &Path, full: bool) -> Res {
         "  integrity   sha256 {} verified",
         artifact::sha256_hex(&payload)
     );
+    println!("  authorship  not checked: there is no signature, anyone can pack any program");
     println!(
         "  program     {} blocks, {} instructions, entry b{} ({:?}); validated",
         program.blocks.len(),
@@ -609,7 +617,7 @@ fn inspect(file: &Path, full: bool) -> Res {
         program.entry,
         program.blocks[program.entry].label
     );
-    println!("  disassembly (blocks are numbered, not named: see Next work in the README)");
+    println!("  disassembly (blocks are numbered, not named: see ROADMAP.md)");
     let text = isa::disasm::disassemble(&program);
     if full {
         print!("{text}");
@@ -632,8 +640,8 @@ fn open(file: &Path, mem: usize, steps: u64) -> Res {
     let o = tools::open(&bytes, mem, steps)
         .map_err(|e| format!("{}: {} -- refused, nothing was run", file.display(), e.0))?;
     status!(
-        "verified {} container: sha256 {}.. ({} bytes); running in the sandbox \
-         (no host I/O, {} KiB memory, {} step budget)",
+        "verified {} container: sha256 {}.. ({} bytes; integrity only, authorship \
+         not checked); running in the sandbox (no host I/O, {} KiB memory, {} step budget)",
         tools::format_name(o.format),
         &o.payload_sha[..16],
         o.payload_bytes,
@@ -653,6 +661,7 @@ fn open(file: &Path, mem: usize, steps: u64) -> Res {
             "payload_bytes": o.payload_bytes,
             "payload_sha256": o.payload_sha,
             "verified": true,
+            "authorship_checked": false,
             "output": o.output,
             "returned": o.ret,
             "exit": format!("{e:?}"),

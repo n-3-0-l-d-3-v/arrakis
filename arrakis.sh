@@ -35,13 +35,13 @@ cmd()  { printf '%s$ %s%s\n' "$C" "$1" "$N"; }
 ok()   { printf '%s%s%s\n' "$G" "$1" "$N"; }
 die()  { printf '%serror: %s%s\n' "$R" "$1" "$N" >&2; exit 1; }
 
-arrakis() { cargo run -q --release --manifest-path "$ROOT/integration/Cargo.toml" --bin arrakis -- "$@"; }
+arrakis() { cargo run -q --release --locked --manifest-path "$ROOT/integration/Cargo.toml" --bin arrakis -- "$@"; }
 tool()    { local repo=$1 bin=$2; shift 2
             cargo run -q --release --manifest-path "$ROOT/$repo/Cargo.toml" --bin "$bin" -- "$@"; }
 
 build() {
   say "building the integration workspace (all eight subsystems; first time: a few minutes)"
-  cargo build --release --manifest-path "$ROOT/integration/Cargo.toml" --bin arrakis || die "build failed"
+  cargo build --release --locked --manifest-path "$ROOT/integration/Cargo.toml" --bin arrakis || die "build failed"
 }
 
 artifact() {
@@ -178,7 +178,7 @@ case "${1:-quickstart}" in
         say "cargo test: $r"; (cd "$ROOT/$r" && cargo test -q --release --workspace 2>&1 | grep -E 'test result|FAILED|panicked') || die "$r tests failed"
       done
     else
-      cargo test --release --manifest-path "$ROOT/integration/Cargo.toml" || die "integration tests failed"
+      cargo test --release --locked --manifest-path "$ROOT/integration/Cargo.toml" || die "integration tests failed"
     fi ;;
   help|-h) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//' ;;
   *) arrakis "$@" ;;

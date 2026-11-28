@@ -99,14 +99,18 @@ Transactions and MVCC on top of an append-only substrate, real concurrent-client
 
 ## Sibling repositories
 
-- [mentat](https://github.com/n-3-0-l-d-3-v/mentat) — THE MACHINE (COMPLETE)
-- [chakobsa](https://github.com/n-3-0-l-d-3-v/chakobsa) — THE LANGUAGE (QUEUED)
-- [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) — THE KERNEL (QUEUED)
-- [sietch](https://github.com/n-3-0-l-d-3-v/sietch) — THE VAULT (ACTIVE)
-- [distrans](https://github.com/n-3-0-l-d-3-v/distrans) — THE WIRE (QUEUED)
-- [landsraad](https://github.com/n-3-0-l-d-3-v/landsraad) — THE COLONY (QUEUED)
-- [ghola](https://github.com/n-3-0-l-d-3-v/ghola) — THE HISTORY (QUEUED)
-- [shai-hulud](https://github.com/n-3-0-l-d-3-v/shai-hulud) — THE ARTIFACT (STRETCH)
+All nine subsystems are complete and are mirrored, commit for commit, into
+[ARRAKIS](https://github.com/n-3-0-l-d-3-v/arrakis), where one operation runs
+through all of them.
+
+- [mentat](https://github.com/n-3-0-l-d-3-v/mentat) — THE MACHINE: no instruction pointer: dataflow execution
+- [sietch](https://github.com/n-3-0-l-d-3-v/sietch) — THE VAULT: storage that never overwrites a byte
+- [chakobsa](https://github.com/n-3-0-l-d-3-v/chakobsa) — THE LANGUAGE: a compiler with no syntax tree
+- [muaddib](https://github.com/n-3-0-l-d-3-v/muaddib) — THE KERNEL: capabilities instead of paths, logical clocks instead of a wall clock
+- [distrans](https://github.com/n-3-0-l-d-3-v/distrans) — THE WIRE: reliable transport over a channel that lies
+- [landsraad](https://github.com/n-3-0-l-d-3-v/landsraad) — THE COLONY: consensus with no single machine and no global clock
+- [ghola](https://github.com/n-3-0-l-d-3-v/ghola) — THE HISTORY: content-addressed version history
+- [shai-hulud](https://github.com/n-3-0-l-d-3-v/shai-hulud) — THE ARTIFACT: a program carried inside a PDF or SVG
 
 ## Development
 

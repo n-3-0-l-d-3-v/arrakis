@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or design discussion
+    url: https://github.com/n-3-0-l-d-3-v/arrakis/discussions
+    about: Ask how something works, or talk through an idea before opening an issue.
+  - name: Security problem
+    url: https://github.com/n-3-0-l-d-3-v/arrakis/security/advisories/new
+    about: Report privately. See SECURITY.md for what counts.

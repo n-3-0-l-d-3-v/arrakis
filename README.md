@@ -1,13 +1,13 @@
-# ARRAKIS — the impossible computer
+# ARRAKIS: the impossible computer
 
 ![ARRAKIS: pixel-art dunes under two moons, a sandworm breaching](docs/design/banner.svg)
 
-**Eight working subsystems, each built after removing one thing ordinary computers can't live without:** a CPU with no instruction pointer, storage that never overwrites a byte, a compiler with no syntax tree, a kernel with no paths and no clock, a network that lies. Then all eight carry **one real operation end to end**: a program is compiled, versioned, stored, indexed, replicated by a crashing Raft cluster, sent over a network that drops, duplicates and corrupts packets, verified, and run under least privilege on the other side. Same answer, every hop checked, every disaster replayable from a seed.
+**Nine small systems, each built after removing one thing ordinary computers can't live without:** a CPU with no instruction pointer, storage that never overwrites a byte, a compiler with no syntax tree, a kernel with no paths and no clock, a network that lies. Then all of them carry **one real operation end to end**, and every disaster along the way can be replayed exactly from a seed.
 
-Everything here is written from scratch in Rust: no SQL engine, Raft library, TCP stack, VM, compiler framework or version-control library was imported (ghola even implements SHA-256 itself and checks it against a reference crate in tests). External crates are limited to serialization, CLI parsing, checksums and test tooling. Every claim is backed by a test, and every weakness by a measured number.
+[Install](INSTALL.md) · [Demos](docs/DEMOS.md) · [How it works](docs/GUIDE.md) · [Roadmap](ROADMAP.md) · [Contributing](CONTRIBUTING.md)
 
 ```text
-./arrakis.sh chaos        (Windows: .\arrakis.ps1 chaos)
+$ arrakis chaos --seed 7
 
 REPLICATE  it crosses a hostile network and a crashing cluster
    6. [distrans ] pushed the repository to the server: 170 ticks, 4 calls, 67 datagrams sent, 6 dropped, 6 duplicated, 1 corrupted
@@ -23,84 +23,37 @@ REPLICATE  it crosses a hostile network and a crashing cluster
   replay     arrakis chaos --seed 7   reproduces this run exactly
 ```
 
----
+A program is compiled (with no AST), committed to a content-addressed history, stored in an append-only vault, indexed in SQL, replicated by a three-node Raft cluster that is crashed and partitioned while it works, pushed and fetched over a network that drops, duplicates, reorders and corrupts packets, verified, and run under least privilege on the other side. It gives the same answer as on the publisher's machine, every hop is checked, and nothing runs if any check fails. Everything is written from scratch in Rust: no SQL engine, Raft library, TCP stack, VM, compiler framework or version-control library was imported (ghola even implements SHA-256 itself and checks it against a reference crate). It is an experiment and a teaching codebase, not production software ([limits](#limits-and-non-goals)).
 
-## Quick start (about 5 minutes)
+## Quick start
 
-You need [Rust](https://rustup.rs) (stable) and git. Nothing else.
+**Prebuilt binary** (Windows x64, Linux x64/ARM64, macOS Apple Silicon): download from [Releases](https://github.com/n-3-0-l-d-3-v/arrakis/releases), check the SHA-256, unpack, and run `./arrakis demo` from the folder. Details and verification: [INSTALL.md](INSTALL.md).
+
+**From source** (you need [Rust](https://rustup.rs) and git; about five minutes):
 
 ```bash
 git clone https://github.com/n-3-0-l-d-3-v/arrakis && cd arrakis
-./arrakis.sh
+./arrakis.sh                        # Windows PowerShell: .\arrakis.ps1
 ```
 
-Windows (PowerShell):
-
-```powershell
-git clone https://github.com/n-3-0-l-d-3-v/arrakis; cd arrakis
-.\arrakis.ps1
-```
-
-If scripts are blocked on your machine (`running scripts is disabled`), run
-`powershell -ExecutionPolicy Bypass -File .\arrakis.ps1` instead, or skip the
-script and use Cargo directly from the repository root: the root `Cargo.toml`
-is a workspace whose default binary is the `arrakis` CLI, and `Cargo.lock` is
-committed, so `--locked` builds exactly the tested dependency set.
-
-```powershell
-cargo run --release --locked -- demo        # or: chaos, sabotage, examples, run examples\fib.ck, --help
-```
-
-That one script command builds the stack and runs every headline demo:
-
-| # | Demo | What you should see |
-|---|---|---|
-| 1 | `arrakis demo` | one program through all eight layers on a clean network, twelve numbered steps |
-| 2 | `arrakis chaos` | the same under 15% loss + duplication, reordering, corruption, truncation, and a cluster that is crashed and partitioned while it works. Same answer. |
-| 3 | `arrakis sabotage` | one bit flipped on the server, then a lying SQL registry: both caught, nothing executes |
-| 4 | `arrakis examples` | five programs (Fibonacci, LCM, primes, Collatz, a bank-transfer invariant) computed locally and again after the hostile trip; all match their documented answers |
-| 5 | `arrakis pack / open / tamper` | a program hidden in an ordinary PDF, verified and run in a sandbox; change one character and it is refused |
-
-Timing on the development machine: the integration build takes about 20 s with crates already downloaded (a first build also downloads them); the demos take about 15 s together after that.
-
-**No Rust?** `docker build -t arrakis . && docker run --rm arrakis` runs the same quickstart in a container (any `./arrakis.sh` command works: `docker run --rm arrakis chaos --seed 42`).
-
-**Then try:**
+That builds the stack and runs every headline demo. Or use Cargo directly from the root: the root `Cargo.toml` is a workspace whose default binary is `arrakis`, and `Cargo.lock` is committed, so `--locked` builds exactly the tested dependency set:
 
 ```bash
-./arrakis.sh chaos --seed 42        # a different disaster, still the same answer
-./arrakis.sh chaos --loss 0.3       # nastier network
-./arrakis.sh chaos --seed 42 --html out/chaos.html   # keep the run as one self-contained page
-./arrakis.sh demo --program examples/bank.ck --chaos
-./arrakis.sh run examples/primes.ck # compile + run one program on the dataflow machine
-./arrakis.sh tour                   # component demos: machine, kernel, wire, colony, vault, database, history
-./arrakis.sh test                   # the integration test suite (./arrakis.sh test all: every workspace)
+cargo run --release --locked -- demo        # or: chaos, sabotage, examples, run examples/fib.ck, --help
 ```
 
-In a terminal the output is coloured, with box-drawing rules ([the look](docs/design/DIRECTIONS.md)). Redirected to a file or a pipe it is plain ASCII, so logs stay readable in Windows PowerShell too. `--color never|always|auto` and `NO_COLOR` override this. `-q` prints only what the program itself prints.
+If PowerShell says scripts are disabled, run `powershell -ExecutionPolicy Bypass -File .\arrakis.ps1` (affects that process only). **No Rust?** `docker build -t arrakis . && docker run --rm arrakis`.
 
----
+## Four demos
 
-## Architecture
+| Demo | Command | What it shows |
+|---|---|---|
+| **A. The whole system** | `arrakis demo` | one program through all eight layers on a clean network, twelve numbered steps, each naming the layer that did it |
+| **B. The hostile network** | `arrakis chaos --seed 42` | the same under 15% loss plus duplication, reordering, corruption and truncation, with the cluster crashed and partitioned; same answer; the seed replays it byte for byte |
+| **C. Sabotage** | `arrakis sabotage` | one bit flipped on the server, then a lying SQL registry: each is caught and nothing executes. Also `pack` / `tamper` / `open`: change one character of a program hidden in a PDF and it is refused |
+| **D. The individual systems** | `./arrakis.sh tour` | each subsystem's own tool: machine, kernel, wire, colony, vault, database, history; plus `arrakis run`, `arrakis artifact` |
 
-```mermaid
-flowchart LR
-    src["program.ck"] --> chakobsa
-    chakobsa["chakobsa<br/>LANGUAGE<br/>no AST: parse straight to typed SSA"] -->|bytecode| mentat
-    mentat["mentat<br/>MACHINE<br/>no instruction pointer: dataflow"]
-    chakobsa -->|bytecode| ghola
-    ghola["ghola<br/>HISTORY<br/>content-addressed DAG"] -->|objects| sietch
-    choam["choam<br/>DATABASE<br/>SQL on the vault"] --> sietch
-    landsraad["landsraad<br/>COLONY<br/>Raft, crashing nodes"] -->|log| sietch
-    sietch[("sietch<br/>VAULT<br/>append-only, never overwrites")]
-    ghola <-->|push / fetch| distrans
-    landsraad <-->|messages| distrans
-    distrans{{"distrans<br/>WIRE<br/>reliability over a lying channel"}}
-    muaddib["muaddib<br/>KERNEL<br/>capabilities, logical clocks"] -.->|"grants READ|EXECUTE"| mentat
-    shai["shai-hulud<br/>ARTIFACT<br/>program inside a PDF/SVG"] -->|verified bytecode| mentat
-```
-
-Every arrow is a real Cargo dependency or a real call in the [integration pipeline](integration/src/pipeline.rs).
+[docs/DEMOS.md](docs/DEMOS.md) explains each one: the assumption removed, the mechanism that replaces it, what to look at, and what it does and does not prove. `--html FILE` keeps a run as one self-contained page; `--json` gives one object for scripts ([docs/WORKFLOWS.md](docs/WORKFLOWS.md)). In a terminal the output is coloured ([the look](docs/design/DIRECTIONS.md)); redirected it is plain ASCII, and `--color never|always|auto` and `NO_COLOR` override that.
 
 ## The headline: one operation through every layer
 
@@ -123,45 +76,80 @@ Every arrow is a real Cargo dependency or a real call in the [integration pipeli
 
 The proof that this is not decorative: [`integration/tests`](integration/tests) runs it across six seeds at 20% loss, sabotages the server copy and the registry independently (each is caught, and removing the registry check makes the sabotage test fail), rejects bad programs at layer 1, and differentially checks 48 random programs against Rust's own arithmetic, half of them across the hostile stack. Details: [docs/INTEGRATION.md](docs/INTEGRATION.md).
 
-## The program that hides in a PDF (shai-hulud)
+## Architecture
 
-```bash
-./arrakis.sh pack examples/fib.ck -o out/fib.pdf       # compile, then embed in an ordinary one-page PDF
-./arrakis.sh inspect out/fib.pdf                       # verify structure + SHA-256, show the program; nothing runs
-./arrakis.sh open out/fib.pdf                          # verify, then run in mentat's sandbox  ->  returned 6765
-./arrakis.sh tamper out/fib.pdf -o out/bad.pdf         # change ONE character of the hidden program
-./arrakis.sh open out/bad.pdf                          # error: payload integrity check failed -- refused, nothing was run
+```mermaid
+flowchart LR
+    src["program.ck"] --> chakobsa
+    chakobsa["chakobsa<br/>LANGUAGE<br/>no AST: parse straight to typed SSA"] -->|bytecode| mentat
+    mentat["mentat<br/>MACHINE<br/>no instruction pointer: dataflow"]
+    chakobsa -->|bytecode| ghola
+    ghola["ghola<br/>HISTORY<br/>content-addressed DAG"] -->|objects| sietch
+    choam["choam<br/>DATABASE<br/>SQL on the vault"] --> sietch
+    landsraad["landsraad<br/>COLONY<br/>Raft, crashing nodes"] -->|log| sietch
+    sietch[("sietch<br/>VAULT<br/>append-only, never overwrites")]
+    ghola <-->|push / fetch| distrans
+    landsraad <-->|messages| distrans
+    distrans{{"distrans<br/>WIRE<br/>reliability over a lying channel"}}
+    muaddib["muaddib<br/>KERNEL<br/>capabilities, logical clocks"] -.->|"grants READ|EXECUTE"| mentat
+    shai["shai-hulud<br/>ARTIFACT<br/>program inside a PDF/SVG"] -->|verified bytecode| mentat
 ```
 
-Open `out/fib.pdf` in a PDF viewer: it is a normal one-page document. The page is an archive card that lists what it carries ([ADR-002](shai-hulud/docs/design/decisions/ADR-002-archive-page-and-hex-text.md); checked with MuPDF, and the earlier plain page with Chrome's viewer). The program is a standard PDF embedded-file attachment (in an SVG, base64 in `<metadata>`) and **no viewer executes it**. Only this loader, invoked on purpose, extracts it, and it fails closed: exactly one payload, a size cap, SHA-256 verified, the program validated, then run in a VM with no host I/O, a memory cap and a step budget. A property test proves any single-byte corruption yields an error or the identical program, never a different one. `./arrakis.sh artifact` runs this whole sequence. Design: [shai-hulud ADR-001](shai-hulud/docs/design/decisions/ADR-001-inert-container-and-strict-loader.md).
+Every arrow is a real Cargo dependency or a real call in the [integration pipeline](integration/src/pipeline.rs).
 
-## The eight subsystems
+## The subsystems
 
 | Subsystem | Codename | Assumption removed | What that forced us to build | Try it |
 |---|---|---|---|---|
 | [mentat](mentat/) | THE MACHINE | an instruction pointer | a dependency-scheduled dataflow VM, 8-byte ISA, assembler, deterministic tamper-detecting replay | `./arrakis.sh machine` |
-| [sietch](sietch/) | THE VAULT | overwriting bytes | append-only log, MVCC, B+tree pages, compaction with crash-safe commit marker, group commit, snapshot isolation | `cargo run --manifest-path sietch/Cargo.toml --bin vaultc` |
-| [chakobsa](chakobsa/) | THE LANGUAGE | a syntax tree | a parser that emits typed SSA directly (incremental, no dominance frontiers), codegen and register allocation for mentat | `./arrakis.sh run examples/fib.ck` |
+| [sietch](sietch/) | THE VAULT | overwriting bytes | append-only log, MVCC, B+tree pages, compaction with crash-safe commit marker, group commit, snapshot isolation | `./arrakis.sh vault` |
+| [chakobsa](chakobsa/) | THE LANGUAGE | a syntax tree | a parser that emits typed SSA directly (incremental, no dominance frontiers), codegen and register allocation for mentat | `arrakis run examples/fib.ck` |
 | [muaddib](muaddib/) | THE KERNEL | paths and a wall clock | unforgeable attenuable capabilities, ownership-moving IPC, Lamport + vector clocks | `./arrakis.sh kernel` |
 | [distrans](distrans/) | THE WIRE | a reliable network | framing + CRC-32C, selective-repeat transport, flow and AIMD congestion control, exactly-once RPC | `./arrakis.sh wire` |
-| [choam](choam/) | THE DATABASE | a separate storage engine | a SQL parser, executor and transactions running only on sietch; `choamc` shell | `cargo run --manifest-path choam/Cargo.toml --bin choamc` |
+| [choam](choam/) | THE DATABASE | a separate storage engine | a SQL parser, executor and transactions running only on sietch; `choamc` shell | `./arrakis.sh database` |
 | [landsraad](landsraad/) | THE COLONY | one machine and a global clock | Raft over distrans frames with state on sietch, a cluster simulator with partitions and crashes, a per-tick invariant checker | `./arrakis.sh colony` |
-| [ghola](ghola/) | THE HISTORY | mutable files | from-scratch SHA-256, content-addressed objects, commit DAG, Myers diff, 3-way merge, push/pull over distrans | `cargo run --manifest-path ghola/Cargo.toml --bin ghola -- --help` |
-| [shai-hulud](shai-hulud/) | THE ARTIFACT | "documents are just data" | a program inside a PDF/SVG, run only by a strict sandboxed loader | `./arrakis.sh artifact` |
-| [integration](integration/) | Phase 10 | components working alone | one operation through every layer, plus the `arrakis` CLI | `./arrakis.sh chaos` |
+| [ghola](ghola/) | THE HISTORY | mutable files | from-scratch SHA-256, content-addressed objects, commit DAG, Myers diff, 3-way merge, push/pull over distrans | `./arrakis.sh history` |
+| [shai-hulud](shai-hulud/) | THE ARTIFACT | "documents are just data" | a program inside a PDF/SVG, run only by a strict structural loader in a sandbox | `./arrakis.sh artifact` |
+| [integration](integration/) | Phase 10 | components working alone | one operation through every layer, plus the `arrakis` CLI | `arrakis chaos` |
 
-Each subsystem is also its own repository (github.com/n-3-0-l-d-3-v/&lt;name&gt;), mirrored here commit for commit; parity is checked by git tree hash.
+Each subsystem is also its own repository (github.com/n-3-0-l-d-3-v/&lt;name&gt;), mirrored here commit for commit; parity is checked by git tree hash ([CONTRIBUTING.md](CONTRIBUTING.md)).
 
-## What you can learn here
+### The program that hides in a PDF
+
+```bash
+arrakis pack examples/fib.ck -o out/fib.pdf       # compile, then embed in an ordinary one-page PDF
+arrakis inspect out/fib.pdf                       # verify structure + SHA-256, show the program; nothing runs
+arrakis open out/fib.pdf                          # verify, then run in mentat's sandbox  ->  returned 6765
+arrakis tamper out/fib.pdf -o out/bad.pdf         # change ONE character of the hidden program
+arrakis open out/bad.pdf                          # error: payload integrity check failed -- refused, nothing was run
+```
+
+Open `out/fib.pdf` in a PDF viewer: it is a normal one-page document, an archive card that lists what it carries ([ADR-002](shai-hulud/docs/design/decisions/ADR-002-archive-page-and-hex-text.md)). The program is a standard PDF attachment (in an SVG, base64 in `<metadata>`) and **no viewer executes it**. Only this loader, invoked on purpose, extracts it. It walks the file's own xref table, requires exactly one payload, caps its size, verifies SHA-256, validates the program, and runs it in a VM with no host I/O, a memory cap and a step budget. PDFs re-saved by other tools still load if they stay uncompressed and single-revision; anything else is refused by name ([ADR-003](shai-hulud/docs/design/decisions/ADR-003-structural-pdf-reading.md)). A property test proves any single-byte corruption yields an error or the identical program, never a different one. The hash proves **integrity, not authorship**: there is no signature yet, and the output says so.
+
+## Things to explore
+
+```bash
+arrakis chaos --seed 42                     # a different disaster, still the same answer
+arrakis chaos --loss 0.3                    # a nastier network
+arrakis chaos --seed 42 --html out/chaos.html   # the run as one self-contained page
+arrakis demo --program examples/bank.ck --chaos # your own program through the hostile stack
+arrakis run examples/primes.ck              # compile + run one program on the dataflow machine
+arrakis --json open out/fib.pdf             # one JSON object, for scripts
+./arrakis.sh test all                       # every test suite in every workspace
+```
+
+(`arrakis …` is the prebuilt binary or `cargo run --release --locked -- …`; `./arrakis.sh …` and `.\arrakis.ps1 …` pass any command through.)
+
+What you can learn here:
 
 - **How a CPU, a database, TCP, Raft and git actually work**, from code small enough to read in an afternoon each. [docs/GUIDE.md](docs/GUIDE.md) explains every component twice: plainly, then with the computer science.
-- **Which parts of each are forced and which are convention.** Removing one assumption shows what really depends on it; each component's ADRs say what was forced.
+- **Which parts of each are forced and which are convention.** Removing one assumption shows what really depends on it; each component's ADRs say what was forced ([docs/CONSTRAINT_MATRIX.md](docs/CONSTRAINT_MATRIX.md)).
 - **How to test systems that fail.** Property tests over invariants, differential tests against independent reference implementations, mutation checks (break the code on purpose and confirm a test notices), and seeded chaos you can replay exactly.
-- **How to write down engineering honestly.** 50+ ADRs, each recording what was decided, what broke, and what was measured, including the results that look bad.
+- **How to write engineering down honestly.** 50+ ADRs, each recording what was decided, what broke, and what was measured, including the results that look bad.
 
-## What it costs: measured, with context
+## Evidence: tests and measurements
 
-Nothing here is tuned to look good. These numbers come from the ADRs, with why they are what they are.
+About 830 tests across the ten workspaces (unit, property, differential, replay and regression tests), all passing with `fmt` and `clippy -D warnings` clean; CI runs the integration suite and the quickstart on Linux, Windows and macOS. Nothing below is tuned to look good. The numbers come from the ADRs, with why they are what they are; they were measured on one development machine and are useful as ratios, not as absolute speeds.
 
 | Measurement | Context |
 |---|---|
@@ -176,40 +164,37 @@ Nothing here is tuned to look good. These numbers come from the ADRs, with why t
 | **landsraad** the invariant checker caught 4 of 5 deliberately injected Raft bugs | the 5th (Raft paper Figure 8) is caught only by a scripted test, not by random search |
 | **integration** the full hostile pipeline runs in about 0.1 s of real time | all network and cluster time is simulated, so runs are fast and exactly reproducible |
 
-## What this is not
+Found and fixed while preparing releases, each with a regression test that fails without the fix: `and`/`or` in a `while` condition did not compile ([chakobsa ADR-007](chakobsa/docs/design/decisions/ADR-007-short-circuit-while-conditions.md)); constants wider than 32 bits did not compile ([chakobsa ADR-008](chakobsa/docs/design/decisions/ADR-008-64-bit-constants.md)); and the PDF loader read the *first* revision of an incrementally updated file, so it could run a program the document no longer carried ([shai-hulud ADR-003](shai-hulud/docs/design/decisions/ADR-003-structural-pdf-reading.md)).
 
-- **Not production infrastructure.** The networks and the Raft cluster are simulations inside one process, in virtual time; there are no real sockets. muaddib's kernel is a simulation too.
-- **Not a general-purpose language.** chakobsa has `i64`, `bool`, functions, `if`, `while` and recursion. No arrays, strings or I/O; constants must fit in 32 bits.
-- **Not a security product.** shai-hulud's hash proves integrity, not authorship (anyone can re-pack a file), and its PDF reader only understands the layout it writes.
+## Limits and non-goals
+
+- **Not production infrastructure.** The networks and the Raft cluster are simulations inside one process, in virtual time; there are no real sockets. muaddib's kernel is a simulation too, and the sandbox is not an operating-system boundary ([SECURITY.md](SECURITY.md)).
+- **Not a general-purpose language.** chakobsa has `i64`, `bool`, functions, `if`, `while` and recursion. No arrays, strings or I/O.
+- **Not a security product.** shai-hulud's hash proves integrity, not authorship (anyone can re-pack a file), and its PDF reader handles a stated subset of PDF.
 - **Not fast.** See the table above. Correctness and clarity came first, and the numbers are published.
+- **Not exhaustively tested for every failure.** Random schedule search misses one known Raft bug; chaos runs are samples, replayable but not proofs.
 
-## Status
+What comes next, and what is research: [ROADMAP.md](ROADMAP.md). The full assessment of each limitation: [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md).
 
-Phases 1–8 and 10 are **complete** against a 10-point [Definition of Done](docs/PUBLIC_DOD.md) (a real workload, invariants, failure modes, tests, property tests, benchmarks, observability, design docs, seed-reproducible failures, comparison with a conventional reference). Phase 9, shai-hulud, was a stretch goal and is complete at Level 1 (PDF + SVG containers, strict loader, tests, mutation-checked); executing inside viewers was deliberately not built ([ADR-001](shai-hulud/docs/design/decisions/ADR-001-inert-container-and-strict-loader.md)).
-
-Found while preparing this release, and fixed: a `while` loop whose condition used `and`/`or` failed to compile in chakobsa (validation caught it; no wrong code was ever produced). The fix, a regression test that fails without it, and the reason the property tests missed it are in [chakobsa ADR-007](chakobsa/docs/design/decisions/ADR-007-short-circuit-while-conditions.md).
-
-### Next work
-
-1. **shai-hulud:** parse PDFs structurally (trailer → xref → objects) so files re-saved by other tools still load; sign payloads (Ed25519) for authorship; show block names in disassembly. (A title containing the container's marker used to break the file; fixed in ADR-002.)
-2. **chakobsa:** materialize 64-bit constants; make register allocation sub-quadratic; add basic optimization passes; extend the differential generator to emit boolean loop conditions (the gap that hid ADR-007).
-3. **distrans:** an RPC retry deadline that scales with request size (it collapses under large requests today; ghola works around it), and congestion control that degrades gracefully at 20% loss.
-4. **landsraad:** targeted schedule search that finds the Figure 8 bug without a script.
-5. **Beyond simulation:** a real-socket backend for distrans, and muaddib actually isolating mentat rather than gating it with a capability check.
-
-## Find your way around
+## Documentation
 
 | If you want to… | Read |
 |---|---|
-| understand the whole thing | [docs/GUIDE.md](docs/GUIDE.md), the learning guide |
-| use it: write, run, send, script (`--json`), replay a run | [docs/WORKFLOWS.md](docs/WORKFLOWS.md) |
+| install it on any platform, verify a download | [INSTALL.md](INSTALL.md) |
 | see each demo's real output, explained | [docs/DEMOS.md](docs/DEMOS.md) |
+| use it: write, run, send, script (`--json`), replay a run | [docs/WORKFLOWS.md](docs/WORKFLOWS.md) |
+| understand the whole thing | [docs/GUIDE.md](docs/GUIDE.md), the learning guide |
 | follow the operation layer by layer | [docs/INTEGRATION.md](docs/INTEGRATION.md) and [integration/src/pipeline.rs](integration/src/pipeline.rs) |
 | see how each constraint forced each design | [docs/CONSTRAINT_MATRIX.md](docs/CONSTRAINT_MATRIX.md) |
 | read the decisions and failures | `<subsystem>/docs/design/decisions/ADR-*.md` |
 | see how it was built, ticket by ticket | [docs/HISTORY.md](docs/HISTORY.md), [docs/PHASES.md](docs/PHASES.md), `<subsystem>/tickets/` |
 | check what "done" means here | [docs/PUBLIC_DOD.md](docs/PUBLIC_DOD.md) |
+| know what changed | [CHANGELOG.md](CHANGELOG.md) |
+
+## Community
+
+Questions and ideas: [Discussions](https://github.com/n-3-0-l-d-3-v/arrakis/discussions). Bugs: [issues](https://github.com/n-3-0-l-d-3-v/arrakis/issues/new/choose), with the command and the seed. Contributions are welcome, small and focused is best: [CONTRIBUTING.md](CONTRIBUTING.md). Please follow the [Code of Conduct](CODE_OF_CONDUCT.md); report security problems privately ([SECURITY.md](SECURITY.md)); help and support: [SUPPORT.md](SUPPORT.md).
 
 **Why "Arrakis"?** Dune's desert planet, where every basic assumption (water, shelter, movement itself) has to be re-engineered just to survive. That is this project's premise. Each subsystem's README explains its own name.
 
-MIT licensed. See [LICENSE](LICENSE) and [CONTRIBUTING.md](CONTRIBUTING.md).
+MIT licensed. See [LICENSE](LICENSE).

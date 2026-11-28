@@ -25,13 +25,13 @@ Each subsystem's `docs/DEFINITION_OF_DONE.md` states it; summarized:
 | Requirement | Status | Evidence |
 |---|---|---|
 | Zero to working end-to-end demo, chaos included, in 5–7 minutes | met | one command: `./arrakis.sh` or `.\arrakis.ps1`. Measured on the development machine: release build ~20 s with crates cached, all five demos ~15 s |
-| A README that pitches in four lines and scans | met | `README.md`: pitch, real output, quick start, architecture, headline pipeline, PDF demo, component table, costs, non-goals, status, next work |
+| A README that pitches in four lines and scans | met | `README.md`: pitch, real output, quick start, four demos, headline pipeline, architecture, subsystems, things to explore, evidence, limits, docs, community |
 | Distinctive parts front and center | met | the integration pipeline is the README's hero; shai-hulud has its own section and `./arrakis.sh artifact` |
 | Consistent CLIs, helpful errors, visible progress | met | one `arrakis` CLI with `--help` on every command; `landsraad-chaos` and `muaddib-pipeline` gained `--help` and print usage on every argument error; errors say what to do next |
 | Example programs that just work | met | five `.ck` programs in `examples/`, each with a documented `// expect:` answer checked by `arrakis examples` and by `integration/tests/front_door.rs` |
 | No-Rust path | met | `Dockerfile` + `.dockerignore`; on 2026-11-26 (Docker Desktop 29.1.3) `docker build` succeeded and quickstart, `chaos --seed 42` and `sabotage` ran inside the container |
 | Documentation hierarchy | met | README → `docs/DEMOS.md` → `docs/GUIDE.md` → ADRs, with `docs/HISTORY.md` preserving the build log |
-| Limitations stated, turned into next work | met | README "What this is not" and "Next work" |
+| Limitations stated, turned into next work | met | README "Limits and non-goals", ROADMAP.md, docs/RELEASE_READINESS.md |
 | Everything still builds, tests pass, chaos is deterministic | met | integration: fmt, clippy `-D warnings`, 16 tests (24 as of 2026-11-27); chakobsa, landsraad and muaddib suites re-run after their changes; `arrakis chaos --seed 7` reproduces the same trace (also asserted by a test) |
 | No test, property check, chaos harness or ADR removed | met | only additions: chakobsa ADR-007 + regression test, `front_door.rs` (6 tests), tools unit tests |
 

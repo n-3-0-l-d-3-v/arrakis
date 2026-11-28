@@ -142,6 +142,9 @@ fn json_output_is_parseable_and_failures_stay_failures() {
     let opened: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_eq!(opened["payload_sha256"], packed["payload_sha256"]);
     assert_eq!(opened["returned"], v["main"]);
+    // a hash proves integrity, not authorship; the output must not imply more
+    assert_eq!(opened["verified"], true);
+    assert_eq!(opened["authorship_checked"], false);
 
     let out = call(&[
         "tamper".as_ref(),

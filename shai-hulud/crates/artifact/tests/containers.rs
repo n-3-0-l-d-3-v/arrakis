@@ -71,7 +71,11 @@ fn pdf_is_structurally_valid_xref_and_inert() {
 #[test]
 fn failure_modes_fail_closed() {
     assert_eq!(extract(b"hello").unwrap_err(), Error::UnknownFormat);
-    assert_eq!(extract(b"%PDF-1.7\n%%EOF").unwrap_err(), Error::NotFound);
+    // no startxref: not a PDF this loader can walk (was NotFound before ADR-003)
+    assert_eq!(
+        extract(b"%PDF-1.7\n%%EOF").unwrap_err(),
+        Error::Malformed("no startxref".into())
+    );
     let mut pdf = embed(Format::Pdf, &program(), "t").unwrap();
     let pos = pdf.windows(2).position(|w| w == b"{\"").unwrap();
     pdf[pos + 2] ^= 1; // corrupt payload
@@ -206,4 +210,90 @@ fn the_page_states_true_facts_and_claims_no_verification() {
     for page in [lines.join("\n"), svg] {
         assert!(!page.to_lowercase().contains("verified"));
     }
+}
+
+/// ADR-003: files re-saved by real tools (tests/fixtures/README.md). Those
+/// that keep a supported structure load the identical program; the others
+/// are refused as unsupported, never as "integrity check failed".
+#[test]
+fn pdfs_re_saved_by_other_tools_load_or_are_refused_as_unsupported() {
+    let fixture = |name: &str| {
+        std::fs::read(format!(
+            "{}/tests/fixtures/{name}.pdf",
+            env!("CARGO_MANIFEST_DIR")
+        ))
+        .unwrap()
+    };
+    let original = pdf::unwrap(&fixture("orig")).unwrap();
+    for name in ["pypdf-resave", "pypdf-compressed", "mupdf-plain"] {
+        assert_eq!(pdf::unwrap(&fixture(name)).unwrap(), original, "{name}");
+        extract(&fixture(name)).unwrap();
+    }
+    for (name, why) in [
+        ("mupdf-deflate", "compressed embedded file"),
+        ("mupdf-objstm", "cross-reference stream"),
+        ("mupdf-incremental", "incremental update"),
+    ] {
+        match extract(&fixture(name)) {
+            Err(Error::Unsupported(m)) => assert!(m.contains(why), "{name}: {m}"),
+            other => panic!("{name}: expected Unsupported, got {other:?}"),
+        }
+    }
+}
+
+/// The same refusals without any outside tool, so they stay pinned even if
+/// the fixtures are regenerated.
+#[test]
+fn unsupported_structures_are_refused_by_construction() {
+    let pdf = embed(Format::Pdf, &program(), "t").unwrap();
+    // one char per byte, so string offsets are file offsets
+    let text: String = pdf
+        .iter()
+        .map(|&b| if b < 0x80 { b as char } else { '?' })
+        .collect();
+
+    // an incremental update: a second revision whose trailer points back
+    let sx = text.rfind("startxref\n").unwrap() + "startxref\n".len();
+    let prev: usize = text[sx..].lines().next().unwrap().parse().unwrap();
+    let mut updated = pdf.clone();
+    let at = updated.len();
+    updated.extend_from_slice(
+        format!(
+            "xref\n0 1\n0000000000 65535 f \ntrailer\n<< /Size 10 /Root 1 0 R /Prev {prev} >>\nstartxref\n{at}\n%%EOF\n"
+        )
+        .as_bytes(),
+    );
+    assert!(
+        matches!(extract(&updated), Err(Error::Unsupported(ref m)) if m.contains("incremental"))
+    );
+
+    // a compressed attachment (same length, so every xref offset stays right)
+    let subtype = "/Subtype /application#2Fjson";
+    let filter = format!("{:<width$}", "/Filter /FlateDecode", width = subtype.len());
+    let at = pdf
+        .windows(subtype.len())
+        .position(|w| w == subtype.as_bytes())
+        .unwrap();
+    let mut compressed = pdf.clone();
+    compressed[at..at + subtype.len()].copy_from_slice(filter.as_bytes());
+    assert_eq!(compressed.len(), pdf.len());
+    assert!(
+        matches!(extract(&compressed), Err(Error::Unsupported(ref m)) if m.contains("compressed"))
+    );
+
+    // the first in-use xref entry no longer points at its object
+    let entry = text[prev..].find(" 00000 n ").unwrap() + prev - 10;
+    let mut bad = pdf.clone();
+    bad[entry + 9] = if bad[entry + 9] == b'0' { b'1' } else { b'0' };
+    assert!(matches!(extract(&bad), Err(Error::Malformed(_))));
+
+    // two xref entries swapped: each offset points at a real object, but
+    // not the one its entry names, so the table is lying
+    let (a, b) = (entry, entry + 20);
+    let mut swapped = pdf.clone();
+    swapped[a..a + 10].copy_from_slice(&pdf[b..b + 10]);
+    swapped[b..b + 10].copy_from_slice(&pdf[a..a + 10]);
+    assert!(
+        matches!(extract(&swapped), Err(Error::Malformed(ref m)) if m.contains("does not point at its object"))
+    );
 }

@@ -13,7 +13,6 @@ use crate::page::{self, Facts};
 use crate::{sha256_hex, Error, MAX_PAYLOAD};
 
 const MARKER: &[u8] = b"/Type /EmbeddedFile";
-const HASH_KEY: &[u8] = b"/IMC_SHA256 (";
 
 /// US Letter, in points.
 const W: f64 = 612.0;
@@ -282,56 +281,22 @@ pub fn wrap_with(payload: &[u8], title: &str, facts: Option<&Facts>) -> Result<V
     Ok(out)
 }
 
-fn find(hay: &[u8], needle: &[u8], from: usize) -> Option<usize> {
-    if from > hay.len() {
-        return None;
-    }
-    hay[from..]
-        .windows(needle.len())
-        .position(|w| w == needle)
-        .map(|p| p + from)
-}
-
+/// Extracts and verifies the payload by walking the file's own structure
+/// (`startxref` -> xref table -> objects; see `pdfread` and ADR-003), so a
+/// file re-saved by another tool still loads when its structure is one this
+/// reader supports, and is refused with `Error::Unsupported` when it is not.
 pub fn unwrap(bytes: &[u8]) -> Result<Vec<u8>, Error> {
-    let at = find(bytes, MARKER, 0).ok_or(Error::NotFound)?;
-    if find(bytes, MARKER, at + 1).is_some() {
-        return Err(Error::Multiple);
+    let ef = crate::pdfread::embedded_file(bytes)?;
+    let want = ef
+        .sha256
+        .ok_or_else(|| Error::Malformed("no checksum".into()))?;
+    if want.len() != 64 {
+        return Err(Error::Malformed("short checksum".into()));
     }
-    let stream =
-        find(bytes, b"stream\n", at).ok_or_else(|| Error::Malformed("no stream".into()))?;
-    let dict = &bytes[at..stream];
-
-    let len_at = find(dict, b"/Length ", 0).ok_or_else(|| Error::Malformed("no /Length".into()))?
-        + b"/Length ".len();
-    let digits: Vec<u8> = dict[len_at..]
-        .iter()
-        .take_while(|b| b.is_ascii_digit())
-        .copied()
-        .collect();
-    let len: usize = std::str::from_utf8(&digits)
-        .ok()
-        .and_then(|s| s.parse().ok())
-        .ok_or_else(|| Error::Malformed("bad /Length".into()))?;
-    if len > MAX_PAYLOAD {
-        return Err(Error::TooLarge(len));
-    }
-
-    let h_at = find(dict, HASH_KEY, 0).ok_or_else(|| Error::Malformed("no checksum".into()))?
-        + HASH_KEY.len();
-    let want = dict
-        .get(h_at..h_at + 64)
-        .ok_or_else(|| Error::Malformed("short checksum".into()))?;
-
-    let start = stream + b"stream\n".len();
-    let end = start
-        .checked_add(len)
-        .filter(|e| *e <= bytes.len())
-        .ok_or_else(|| Error::Malformed("stream exceeds file".into()))?;
-    let payload = &bytes[start..end];
-    if sha256_hex(payload).as_bytes() != want {
+    if sha256_hex(ef.data).as_bytes() != want.as_slice() {
         return Err(Error::HashMismatch);
     }
-    Ok(payload.to_vec())
+    Ok(ef.data.to_vec())
 }
 
 #[cfg(test)]

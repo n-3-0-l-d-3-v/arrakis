@@ -37,7 +37,7 @@ function Die([string]$t) { Write-Host "error: $t" -ForegroundColor Red; exit 1 }
 # Exit codes are unaffected ($LASTEXITCODE still comes from the native tool).
 function Plain { process { "$_" } }
 
-function Arrakis { cargo run -q --release --manifest-path (Join-Path $Root 'integration\Cargo.toml') --bin arrakis -- @args }
+function Arrakis { cargo run -q --release --locked --manifest-path (Join-Path $Root 'integration\Cargo.toml') --bin arrakis -- @args }
 function Tool([string]$repo, [string]$bin) {
     $a = $args
     cargo run -q --release --manifest-path (Join-Path $Root "$repo\Cargo.toml") --bin $bin -- @a 2>&1 | Plain
@@ -45,7 +45,7 @@ function Tool([string]$repo, [string]$bin) {
 
 function Build {
     Say 'building the integration workspace (all eight subsystems; first time: a few minutes)'
-    cargo build --release --manifest-path (Join-Path $Root 'integration\Cargo.toml') --bin arrakis 2>&1 | Plain
+    cargo build --release --locked --manifest-path (Join-Path $Root 'integration\Cargo.toml') --bin arrakis 2>&1 | Plain
     if ($LASTEXITCODE) { Die 'build failed' }
 }
 
@@ -205,7 +205,7 @@ switch ($Command) {
                 if ($code) { Die "$r tests failed" }
             }
         } else {
-            cargo test --release --manifest-path (Join-Path $Root 'integration\Cargo.toml'); if ($LASTEXITCODE) { Die 'integration tests failed' }
+            cargo test --release --locked --manifest-path (Join-Path $Root 'integration\Cargo.toml'); if ($LASTEXITCODE) { Die 'integration tests failed' }
         }
     }
     { $_ -in 'help', '-h' } { Get-Content $PSCommandPath -TotalCount 15 | Select-Object -Skip 1 | ForEach-Object { $_ -replace '^# ?', '' } }

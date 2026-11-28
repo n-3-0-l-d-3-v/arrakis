@@ -1,0 +1,148 @@
+name: Release
+
+# Builds, tests and packages the `arrakis` binary for every supported
+# platform, on that platform's own runner, and smoke-tests the packaged
+# binary there.
+#
+# - On a version tag (v1.2.3) it also creates a DRAFT GitHub Release with the
+#   archives, SHA256SUMS and build-provenance attestations. A person reviews
+#   and publishes the draft; nothing is published automatically.
+# - Run it by hand (Actions -> Release -> Run workflow) for a dry run: same
+#   builds and smoke tests, artifacts kept for a week, no release.
+# - Ordinary pushes and pull requests never run it.
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # The toolchain every release binary is built with. Change it deliberately.
+  RUST_VERSION: "1.98.1"
+  CARGO_TERM_COLOR: never
+
+jobs:
+  check:
+    name: Checks (fmt, clippy, tests, version)
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Toolchain
+        run: |
+          rustup toolchain install "$RUST_VERSION" --profile minimal -c rustfmt,clippy
+          rustup default "$RUST_VERSION"
+      - name: Version
+        id: version
+        run: |
+          v=$(grep -m1 '^version' integration/Cargo.toml | cut -d'"' -f2)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF_TYPE}" = tag ] && [ "${GITHUB_REF_NAME}" != "v$v" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match integration/Cargo.toml version $v"
+            exit 1
+          fi
+          grep -q "^## \[$v\]" CHANGELOG.md || { echo "::error::CHANGELOG.md has no [$v] section"; exit 1; }
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - run: cargo test --release --locked --workspace
+
+  build:
+    name: Build ${{ matrix.target }}
+    needs: check
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: x86_64-pc-windows-msvc, os: windows-latest }
+          - { target: x86_64-unknown-linux-musl, os: ubuntu-latest, musl: true }
+          - { target: aarch64-unknown-linux-musl, os: ubuntu-24.04-arm, musl: true }
+          - { target: aarch64-apple-darwin, os: macos-latest }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Toolchain
+        run: |
+          rustup toolchain install "$RUST_VERSION" --profile minimal -t "$TARGET"
+          rustup default "$RUST_VERSION"
+      - name: musl tools
+        if: matrix.musl
+        run: sudo apt-get update -q && sudo apt-get install -y -q musl-tools
+      - name: Build
+        run: cargo build --release --locked --target "$TARGET" --bin arrakis
+      - name: Package
+        run: |
+          export SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)
+          exe=target/$TARGET/release/arrakis; [ -f "$exe.exe" ] && exe="$exe.exe"
+          py=python3; command -v python3 >/dev/null || py=python
+          "$py" scripts/package.py --version "$VERSION" --target "$TARGET" --binary "$exe" --out dist
+      - name: Smoke test the packaged binary
+        run: |
+          py=python3; command -v python3 >/dev/null || py=python
+          stem="arrakis-$VERSION-$TARGET"
+          if [ -f "dist/$stem.zip" ]; then "$py" -m zipfile -e "dist/$stem.zip" unpacked; else "$py" -m tarfile -e "dist/$stem.tar.gz" unpacked; fi
+          chmod +x "unpacked/$stem/"arrakis*
+          file "unpacked/$stem/"arrakis* || true
+          bash scripts/smoke-test.sh "unpacked/$stem"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arrakis-${{ matrix.target }}
+          path: dist/*
+          retention-days: 7
+          if-no-files-found: error
+
+  release:
+    name: Draft GitHub Release
+    needs: [check, build]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # create the draft release
+      id-token: write      # sign the provenance attestation
+      attestations: write  # store it
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: arrakis-*
+          merge-multiple: true
+      - name: Checksums
+        run: |
+          cd dist
+          for f in *.sha256; do (sha256sum --check "$f"); done
+          sha256sum arrakis-* | grep -v '\.sha256$' > SHA256SUMS
+          cat SHA256SUMS
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/*.tar.gz
+            dist/*.zip
+      - name: Release notes from CHANGELOG.md
+        run: |
+          awk -v v="$VERSION" '$0 ~ "^## \\[" v "\\]" {f=1; next} f && /^## \[/ {exit} f' CHANGELOG.md > notes.md
+          printf '\n---\nInstall and verify: see INSTALL.md. Checksums: SHA256SUMS.\n' >> notes.md
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.tar.gz dist/*.zip dist/*.sha256 dist/SHA256SUMS \
+            --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
+            --title "ARRAKIS $VERSION" --notes-file notes.md

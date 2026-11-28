@@ -7,3 +7,5 @@ Cargo.lock
 *.replay
 .DS_Store
 /out/
+/dist/
+/unpacked/
